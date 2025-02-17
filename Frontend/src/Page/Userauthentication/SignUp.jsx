@@ -4,6 +4,7 @@ import doctor from "../../Images/signupbg.png";
 import Button from "../../Component/Button.jsx";
 import OtpVerification from "../../Component/OtpVerification.jsx";
 import { baseUrl } from "../../Constant/Constant.js";
+import { toast } from "react-toastify";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({

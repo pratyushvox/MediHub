@@ -3,6 +3,7 @@ import personalinfo from "../../Images/personalinfobg.png";
 import Button from "../../Component/Button";
 import { useNavigate, useParams } from "react-router-dom";
 import { baseUrl } from "../../Constant/Constant";
+import { toast } from "react-toastify";
 
 const FormPage = () => {
 

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Button from './Button';
 import { baseUrl } from '../Constant/Constant';
+import { toast } from 'react-toastify';
 
 const ResetPassword = ({ onClose, email, otp }) => {
   const [formData, setFormData] = useState({
@@ -96,7 +97,7 @@ const ResetPassword = ({ onClose, email, otp }) => {
       console.log('API Response:', data);
 
       if (response.ok) {
-        alert('Password updated successfully! Please login with your new password.');
+        toast.success('Password updated successfully! Please login with your new password.');
         onClose();
         navigate('/login');
       } else {
