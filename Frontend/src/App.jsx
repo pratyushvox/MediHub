@@ -4,6 +4,7 @@ import Landingpage from './Page/Landingpage';
 import SignUp from './Page/Userauthentication/SignUp';
 import Login from './Page/Userauthentication/Login';
 import FormPage from './Page/Userauthentication/Personalinfo';
+import PatientDashboard from './Page/Patient/Dashboard';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/personalinfo/:id" element={<FormPage />} />
+        <Route path="/Pdashboard" element={<PatientDashboard />}/>
       </Routes>
     </Router>
   );

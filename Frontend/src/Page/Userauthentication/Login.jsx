@@ -69,7 +69,7 @@ const Login = () => {
         if (!personalInfo) {
           navigate(`/personalinfo/${userId}`);
         } else {
-          navigate("/dashboard");
+          navigate("/Pdashboard");
         }
       } catch (error) {
         console.error("Fetch error:", error.message);
