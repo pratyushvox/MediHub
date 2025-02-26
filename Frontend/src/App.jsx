@@ -2,9 +2,10 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import Landingpage from './Page/Landingpage';
 import SignUp from './Page/Userauthentication/SignUp';
-import Login from './Page/Userauthentication/Login';
+import Login from './Page/Userauthentication/Login'
 import FormPage from './Page/Userauthentication/Personalinfo';
 import PatientDashboard from './Page/Patient/Dashboard';
+import AppointmentsList from './Page/Patient/Appointment';
 
 function App() {
   return (
@@ -15,7 +16,8 @@ function App() {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/personalinfo/:id" element={<FormPage />} />
-        <Route path="/Pdashboard" element={<PatientDashboard />}/>
+        <Route path="/Pdashboard/:id" element={<PatientDashboard />}/>
+        <Route path="/patient/appointments" element={<AppointmentsList />}/>
       </Routes>
     </Router>
   );

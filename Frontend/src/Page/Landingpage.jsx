@@ -7,8 +7,13 @@ import Twentyfour from "../Images/Twentyfour.png";
 import Record from "../Images/MedicalRecord.png";
 import ClinicImage from "../Images/Aboutus.png"; // Add a clinic image here
 import Navbar from "../Component/Navbar";
+import { useNavigate } from "react-router-dom"; 
 
 const Landingpage = () => {
+  const navigate = useNavigate(); 
+  const handleBookAppointment = () => {
+    navigate("/login"); // Navigate to the login page
+  };
   // State for About Us sliding navigation
   const [currentAboutIndex, setCurrentAboutIndex] = useState(0);
 
@@ -30,6 +35,9 @@ const Landingpage = () => {
       prevIndex === 0 ? aboutUsParagraphs.length - 1 : prevIndex - 1
     );
   };
+
+  
+
 
   // Scroll to section and update active section
   

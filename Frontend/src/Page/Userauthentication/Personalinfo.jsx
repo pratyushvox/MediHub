@@ -90,7 +90,7 @@ const FormPage = () => {
           throw new Error("Failed to update personal info");
         }
         if(response.status === 200){
-          navigate("/Pdashboard");
+          navigate(`/Pdashboard/${userId}`);
         }
   
         const data = await response.json();

@@ -4,6 +4,7 @@ import { loginUser } from '../controllers/Usercontroller/Logincontroller.js';
 import { checkEmailExists } from '../controllers/Usercontroller/Emailcheckercontroller.js';
 import { forgotPasswordRequest, verifyForgotPasswordOTP ,resetPassword } from '../controllers/Usercontroller/Forgetpasswordcontroller.js';
 import { updatePersonalInfo } from '../controllers/Usercontroller/Personalinfocontroller.js';
+import { getUserDetails } from "../controllers/Usercontroller/UserDetailsController.js";
 
 const router = express.Router();
 
@@ -25,5 +26,9 @@ router.post('/reset-pass',resetPassword)
 
 //update personalinfo routes 
 router.put("/update-personal-info/:userId", updatePersonalInfo);
+
+//getting user details 
+router.get("/:userId", getUserDetails);
+
 
 export default router;
