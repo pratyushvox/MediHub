@@ -3,6 +3,7 @@ import connectDB from './src/config/dbconnection.js';
 import express from 'express';
 import cors from 'cors';
 import userRoutes from './src/routes/userRoutes.js';
+import Adminroutes from "./src/routes/Admin/Adminroutes.js"
 
 
 dotenv.config();
@@ -15,6 +16,10 @@ app.use(cors());
 
 // Routes
 app.use('/api/users', userRoutes);  // Updated to use "/api/users" for consistency
+app.use("/api", Adminroutes); 
+
+
+
 
 
 // Server and Database Connection

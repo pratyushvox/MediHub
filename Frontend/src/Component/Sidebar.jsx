@@ -13,11 +13,12 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
   // Define different navigation items for each role
   const navigationConfig = {
     admin: [
-      { title: 'Dashboard', icon: Home, href: '/admin' },
-      { title: 'Appointments', icon: Calendar, href: '/admin/appointments' },
-      { title: 'Prescriptions', icon: FileText, href: '/admin/prescriptions' },
-      { title: 'Consultation', icon: MessageSquare, href: '/admin/consultation' },
+      { title: 'Dashboard', icon: Home, href: '/admin/admindashboard' },
+      { title: 'Patient', icon: Calendar, href: '/admin/patientlist' },
+      { title: 'Doctor', icon: FileText, href: '/admin/doctorlist' },
+      { title: 'Appointment', icon: MessageSquare, href: '/admin/consultation' },
       { title: 'Invoices', icon: FileText, href: '/admin/invoices' },
+      { title: 'Inventory', icon: FileText, href: '/admin/invoices' },
     ],
     doctor: [
       { title: 'Dashboard', icon: Home, href: '/doctor' },
