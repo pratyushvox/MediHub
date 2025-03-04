@@ -54,7 +54,7 @@ const DoctorLogin = () => {
           toast.success("Logged in successfully!");
           setFormData({ email: "", password: "" });
 
-          navigate(`/doctor/doctorDashboard`); // Update navigation path for Doctor's dashboard
+          navigate(`/doctor/dashboard`); // Update navigation path for Doctor's dashboard
         } else {
           throw new Error("Failed to log in. Please try again.");
         }

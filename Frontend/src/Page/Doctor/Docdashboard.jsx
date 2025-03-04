@@ -1,8 +1,8 @@
 import React from "react";
-import Box from "./Box";
+import Box from "../../Component/Box";
 import { Calendar, Video, Users } from "lucide-react";
 
-const Dashboard = () => {
+const DoctorDashboard = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold">Welcome Dr. Simpal!</h1>
@@ -43,5 +43,5 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default DoctorDashboard; 
 
