@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { baseUrl } from "../../Constant/Constant";
 import Login from "../Userauthentication/Login";
 import AdminDashboard from "./Admindashboard";
+import DoctorLogin from "../Doctor/Doctorlogin";
 
 
 
@@ -79,9 +80,9 @@ const AdminLogin = () => {
     if (role === "patient") {
       navigate("/Login");  // Navigate to the Patient Login page
     } else if (role === "doctor") {
-      navigate("/DoctorLogin");  // Navigate to the Doctor Login page
+      navigate("/Doctor/login");  // Navigate to the Doctor Login page
     } else {
-      navigate("/AdminLogin");  // Navigate to the Admin Login page
+      navigate("/Admin/Login");  // Navigate to the Admin Login page
     }
   };
 

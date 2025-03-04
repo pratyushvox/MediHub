@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import userRoutes from './src/routes/userRoutes.js';
 import Adminroutes from "./src/routes/Admin/Adminroutes.js"
+import Doctorsignuproutes from "./src/routes/Doctor/Doctorsignuproutes.js"
 
 
 dotenv.config();
@@ -17,6 +18,7 @@ app.use(cors());
 // Routes
 app.use('/api/users', userRoutes);  // Updated to use "/api/users" for consistency
 app.use("/api", Adminroutes); 
+app.use('/api', Doctorsignuproutes);
 
 
 

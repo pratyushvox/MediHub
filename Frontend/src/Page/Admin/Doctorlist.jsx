@@ -1,10 +1,13 @@
-import React from 'react';
-import { Search, Filter } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Filter, Plus } from 'lucide-react';
 import Sidebar from '../../Component/Sidebar';
 import ReusableTable from '../../Component/Table';
+import Button from '../../Component/Button';
+import DoctorSignup from '../Doctor/Doctorsignup';
 
 const DoctorList = () => {
-  // Column definition for the doctor table
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const columns = [
     { header: 'Doctor Id', accessor: 'doctorId' },
     { header: 'Doctor name', accessor: 'doctorName' },
@@ -13,7 +16,6 @@ const DoctorList = () => {
     { header: 'Available Time', accessor: 'availableTime' },
   ];
 
-  // Sample data for doctors
   const doctorsData = Array(8).fill().map(() => ({
     doctorId: '17850',
     doctorName: 'Prahyun khadka',
@@ -24,21 +26,25 @@ const DoctorList = () => {
 
   const handleEdit = (doctor) => {
     console.log('Edit doctor:', doctor);
-    // Implement edit functionality
   };
 
   const handleDelete = (doctor) => {
     console.log('Delete doctor:', doctor);
-    // Implement delete functionality
+  };
+
+  const handleAddDoctor = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
   };
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Import your existing Sidebar component with admin role */}
       <Sidebar role="admin" />
       
       <div className="flex-1 p-6 overflow-auto">
-        {/* Header with title and user profile */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-xl font-bold">Doctor List</h1>
           <div className="flex items-center">
@@ -48,35 +54,28 @@ const DoctorList = () => {
               </svg>
             </button>
             <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden">
-              <img
-                src="/profile-placeholder.jpg"
-                alt="User Profile"
-                className="w-full h-full object-cover"
-              />
+              <img src="/profile-placeholder.jpg" alt="User Profile" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
         
-        {/* Search and Filter Section */}
         <div className="flex justify-between mb-6">
           <div className="relative w-full max-w-md">
-            <input
-              type="text"
-              placeholder="Search Patient"
-              className="w-full py-2 px-4 pr-10 bg-teal-100 bg-opacity-40 rounded-lg text-sm"
-            />
+            <input type="text" placeholder="Search Patient" className="w-full py-2 px-4 pr-10 bg-teal-100 bg-opacity-40 rounded-lg text-sm" />
             <button className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400">
               <Search size={18} />
             </button>
           </div>
           
-          <button className="flex items-center bg-teal-400 text-white px-4 py-2 rounded-lg text-sm">
-            Filter
-            <Filter size={16} className="ml-2" />
-          </button>
+          <div className="flex space-x-4">
+            <Button text="Add Doctor" onClick={handleAddDoctor} className="flex items-center bg-teal-400 text-white px-4 py-2 rounded-lg text-sm" />
+            <button className="flex items-center bg-teal-400 text-white px-4 py-2 rounded-lg text-sm">
+              Filter
+              <Filter size={16} className="ml-2" />
+            </button>
+          </div>
         </div>
         
-        {/* Doctor Table using your existing ReusableTable component */}
         <div className="bg-white rounded-lg shadow">
           <ReusableTable
             columns={columns}
@@ -89,6 +88,8 @@ const DoctorList = () => {
           />
         </div>
       </div>
+      
+      {isModalOpen && <DoctorSignup closeModal={closeModal} />}
     </div>
   );
 };
