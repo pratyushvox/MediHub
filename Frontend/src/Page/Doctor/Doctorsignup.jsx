@@ -2,7 +2,7 @@ import { useState } from "react";
 import { baseUrl } from "../../Constant/Constant.js";
 import { toast } from "react-toastify";
 
-export default function DoctorSignup({ closeModal }) {
+export default function DoctorSignup({ closeModal, addDoctorToList }) {
   const [doctor, setDoctor] = useState({
     name: "",
     availableTime: "",
@@ -25,7 +25,6 @@ export default function DoctorSignup({ closeModal }) {
     { label: "General Physician", value: "general_physician" },
   ];
 
-  // Email validation regex
   const emailRegex = /^[a-zA-Z]+@drmedihubclinic\.com$/;
 
   const handleChange = (e) => {
@@ -38,45 +37,58 @@ export default function DoctorSignup({ closeModal }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError(""); 
-
+    setFormError("");
+  
     if (emailError || Object.values(doctor).some((field) => field.trim() === "")) {
       setFormError("Please fill out all fields correctly.");
       return;
     }
-
+  
     setIsSubmitting(true);
-
+  
     try {
       const response = await fetch(`${baseUrl}doctor/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(doctor),
       });
-
+  
       const data = await response.json();
-      console.log("Response Data:", data);
-
+  
+      // Log the response data for debugging
+      console.log("Response Status:", response.status); 
+      console.log("Response OK:", response.ok); 
+      console.log("Doctor signup response:", data);
+  
       if (response.ok) {
         toast.success("Doctor added successfully!", { position: "top-right" });
+        addDoctorToList(data); // Update doctor list instantly
+  
+        setDoctor({
+          name: "", availableTime: "", specialist: "", address: "",
+          experience: "", degree: "", phone: "", email: "", password: ""
+        });
+  
         setTimeout(closeModal, 2000);
       } else {
+        console.error("Signup failed:", data.message);
         setFormError(data.message || "Signup failed. Try again.");
       }
     } catch (error) {
       console.error("Error:", error);
-      setFormError("Something went wrong. Please try again.");
+      setFormError(`Something went wrong: ${error.message || "Please try again."}`);
     }
-
+  
     setIsSubmitting(false);
   };
+  
+  
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
       <div className="bg-white max-w-2xl mx-auto p-8 border rounded shadow-lg relative">
         <button onClick={closeModal} className="absolute top-2 right-2 text-gray-600 hover:text-gray-900">&times;</button>
         <h2 className="text-xl font-semibold text-center mb-6">Doctor Signup</h2>
-
         {formError && <div className="text-red-500 text-center mb-4">{formError}</div>}
 
         <form onSubmit={handleSubmit}>
@@ -97,7 +109,7 @@ export default function DoctorSignup({ closeModal }) {
             <div className="col-span-2 flex justify-end gap-4 mt-6">
               <button onClick={closeModal} className="border px-6 py-3 rounded" type="button">Cancel</button>
               <button type="submit" className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600 cursor-pointer" disabled={isSubmitting}>
-                {isSubmitting ? "Signing Up..." : "Sign Up"}
+                {isSubmitting ? "Adding doctor..." : "Add Doctor"}
               </button>
             </div>
           </div>

@@ -129,31 +129,7 @@ const Login = () => {
                 <p className="text-lg text-gray-600 text-center mt-6">
                   Login to your account and get started.
                 </p>
-                <p className="text-lg text-gray-600 text-center mt-6">
-                  Are you  ? 
-                </p>
-                <div className="flex justify-center space-x-6 mt-4">
-                <div className="text-center">
-                    <FaUser className="text-4xl text-[#3CB5AC] hover:text-[#0665A7] hover:scale-110 transition duration-200" />
-                    <p className="text-sm text-gray-600">Patient</p>
-                  </div>
-
-                  <div
-  className="text-center"
-  onClick={handleDoctorClick}  // Correct the click handler here
->
-  <FaUserMd className="text-4xl text-[#2FA093] hover:text-[#0665A7] hover:scale-110 transition duration-200" />
-  <p className="text-sm text-gray-600">Doctor</p>
-</div>
-
-                  <div
-                    className="text-center"
-                    onClick={handleAdminClick} // Admin icon click
-                  >
-                    <FaUserTie className="text-4xl text-[#2FA093] hover:text-[#0665A7] hover:scale-110 transition duration-200" />
-                    <p className="text-sm text-gray-600">Admin</p>
-                  </div>
-</div>
+          
               </div>
 
               <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-center space-y-6">
