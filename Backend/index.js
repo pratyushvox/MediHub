@@ -5,6 +5,7 @@ import cors from 'cors';
 import userRoutes from './src/routes/userRoutes.js';
 import Adminroutes from "./src/routes/Admin/Adminroutes.js"
 import Doctorroutes from "./src/routes/Doctor/Doctorroutes.js"
+import Displaydataroutes from "./src/routes/Displaydataroutes.js"
 
 
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(cors());
 app.use('/api/users', userRoutes);  // Updated to use "/api/users" for consistency
 app.use("/api", Adminroutes); 
 app.use('/api', Doctorroutes);
+app.use('/api', Displaydataroutes);
 
 
 
