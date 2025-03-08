@@ -1,6 +1,7 @@
 import React from 'react';
-import { Calendar, Video, Users, Clock } from 'lucide-react';
+import { Calendar, Video, Users, Clock, Settings } from 'lucide-react';
 import Box from '../../Component/Box';
+import { useNavigate } from 'react-router-dom';
 
 // Example data for appointments
 const appointments = [
@@ -12,11 +13,36 @@ const appointments = [
 ];
 
 function Doctordash() {
+  const navigate = useNavigate(); 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold mb-8">Welcome Dr Simpal!</h1>
-        
+    <div className="min-h-screen bg-gray-100">
+      {/* Header with profile */}
+      <div className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-8 py-4">
+          <div className="flex justify-between items-center">
+            <h1 className="text-2xl font-bold">Welcome Dr Simpal!</h1>
+            <div className="flex items-center gap-4">
+              <Settings className="w-6 h-6 text-gray-600" />
+              <button
+                className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                onClick={() => navigate('/doctor/profile')} // Navigate to DoctorProfile
+              >
+                <img
+                  src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=50&h=50&fit=crop"
+                  alt="Profile"
+                  className="w-10 h-10 rounded-full"
+                />
+                <div className="text-left hidden sm:block">
+                  <p className="text-sm font-medium text-gray-700">Dr. Simpal</p>
+                  <p className="text-xs text-gray-500">Cardiologist</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-8 py-8">
         {/* Using the Box component for different sections */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Box 
