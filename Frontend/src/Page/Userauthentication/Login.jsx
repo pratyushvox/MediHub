@@ -61,9 +61,15 @@ const Login = () => {
   
         const userId = data.user.id;
         const personalInfo = data.user.personalinfo; // Assuming backend returns this
+
+        const token = data.user.token;
+        console.log("token",token);
+        
+        localStorage.setItem("token", token);
+        localStorage.setItem("Userid", userId);
         
         console.log("User Personal Info:", personalInfo);
-  
+
         toast.success("Logged in successfully!");
         setFormData({ email: "", password: "" });
   

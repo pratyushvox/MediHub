@@ -30,6 +30,7 @@ export const loginUser = async (req, res) => {
       requiresPersonalInfo,
       user: {
         id: user._id,
+        token: user.token,
         name: user.name,
         email: user.email,
         personalinfo: user.personalinfo || null, // Make sure frontend gets this

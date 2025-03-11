@@ -1,5 +1,6 @@
 import User from '../../models/Usermodel/userModel.js';
 import bcrypt from 'bcryptjs';
+import jwt from "jsonwebtoken"
 import otpController from '../OTPController.js';
 
 export const requestOTP = async (req, res) => {
@@ -29,7 +30,8 @@ export const verifyOTP = async (req, res) => {
     }
     
     const { tempUser } = verificationResult;
-    
+
+
     // Create new user with plain password - it will be hashed by the pre-save middleware
     const newUser = new User({
       email,
@@ -41,8 +43,25 @@ export const verifyOTP = async (req, res) => {
     });
     
     await newUser.save();
+
+    const token = jwt.sign(
+      { id: newUser._id, email: newUser.email },  // Payload (user info)
+      process.env.JWT_SECRET,  // Secret key (store in .env)
+      { expiresIn: "1h" }  // Token expiration time
+    );
+
+    newUser.token = token;
+    await newUser.save();
     
-    res.status(200).json({ message: 'Registration successful' });
+    res.status(200).json({ message: 'Registration successful',
+      token,  // Include the token in the response
+      user: {
+        id: newUser._id,
+        email: newUser.email,
+        name: newUser.name,
+        phone: newUser.phone
+      }
+     });
   } catch (error) {
     console.error('OTP verification error:', error);
     res.status(500).json({ message: 'Server error during verification' });

@@ -1,20 +1,71 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, MessageSquare } from 'lucide-react';
 import Sidebar from '../../Component/Sidebar'; // Import Sidebar component
 
 function PatientProfile() {
-  const patientData = {
-    name: "Sameer Shrestha",
-    email: "sameer@medihub.com",
+  const [patientData, setPatientData] = useState({
+    name: "",
+    email: "",
     image: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop",
-    gender: "Male",
-    birthDate: "2012/2/8",
-    phoneNo: "98142514777",
-    patientId: "14785",
-    address: "Kathmandu",
-    registeredDate: "2015/8/9",
-    notes: ["Diabetes", "High Blood Pressure", "Allergy"]
-  };
+    gender: "",
+    birthDate: "",
+    phoneNo: "",
+    address: "",
+    registeredDate: "",
+    notes: []
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchPatientData = async () => {
+      try {
+        const userId = localStorage.getItem("Userid");
+        
+        if (!userId) {
+          throw new Error("User ID not found in localStorage");
+        }
+        
+        const response = await fetch(`http://localhost:4000/api/users/${userId}`);
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        
+        const userData = await response.json();
+        
+        // Create notes array from medical conditions, major surgery, and blood group
+        const notesArray = [];
+        if (userData.personalinfo.medicalConditions) 
+          notesArray.push(userData.personalinfo.medicalConditions);
+        if (userData.personalinfo.majorSurgery) 
+          notesArray.push(userData.personalinfo.majorSurgery);
+        if (userData.personalinfo.bloodGroup) 
+          notesArray.push(`Blood Group: ${userData.personalinfo.bloodGroup}`);
+        
+        setPatientData({
+          name: userData.name,
+          email: userData.email,
+          image: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop", // Keep existing avatar
+          gender: userData.personalinfo.gender || "",
+          birthDate: userData.personalinfo.dobAD || "",
+          phoneNo: userData.phone || userData.personalinfo.phoneNumber || "",
+          address: `${userData.personalinfo.address || ""}, ${userData.personalinfo.ward || ""}, ${userData.personalinfo.district || ""}, ${userData.personalinfo.province || ""}`,
+          registeredDate: new Date(userData.createdAt).toLocaleDateString(),
+          notes: notesArray
+        });
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching patient data:", err);
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchPatientData();
+  }, []);
 
   const appointments = [
     {
@@ -30,6 +81,28 @@ function PatientProfile() {
       treatment: "Bandages on broken hand"
     }
   ];
+
+  if (loading) {
+    return (
+      <div className="flex">
+        <Sidebar role="patient" />
+        <div className="min-h-screen bg-gray-50 p-8 w-full flex items-center justify-center">
+          <p>Loading patient data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex">
+        <Sidebar role="patient" />
+        <div className="min-h-screen bg-gray-50 p-8 w-full flex items-center justify-center">
+          <p className="text-red-500">Error loading patient data: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex">
@@ -78,10 +151,6 @@ function PatientProfile() {
                   <p>{patientData.phoneNo}</p>
                 </div>
                 <div>
-                  <h3 className="font-medium">Patient Id</h3>
-                  <p>{patientData.patientId}</p>
-                </div>
-                <div>
                   <h3 className="font-medium">Address</h3>
                   <p>{patientData.address}</p>
                 </div>
@@ -96,9 +165,13 @@ function PatientProfile() {
             <div className="bg-white rounded-lg p-6 shadow-sm">
               <h3 className="text-lg font-semibold mb-4">Notes</h3>
               <ul className="space-y-2">
-                {patientData.notes.map((note, index) => (
-                  <li key={index}>{note}</li>
-                ))}
+                {patientData.notes.length > 0 ? (
+                  patientData.notes.map((note, index) => (
+                    <li key={index}>{note}</li>
+                  ))
+                ) : (
+                  <li>No medical notes available</li>
+                )}
               </ul>
             </div>
           </div>

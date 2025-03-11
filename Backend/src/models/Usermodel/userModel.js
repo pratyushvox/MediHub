@@ -65,7 +65,12 @@ const userSchema = new mongoose.Schema(
       type: personalInfoSchema,
       default : null
 
-    } , 
+    }, 
+    token: {
+      type: String,
+    default: null
+  },
+
 
     loginAttempts: {
       type: Number,
