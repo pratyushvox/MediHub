@@ -6,7 +6,12 @@ import {
   FileText, 
   Home,
   Stethoscope,
-  MessageSquare 
+  MessageSquare ,
+  FilePlus, 
+  Folder, 
+   
+  Clipboard, 
+  FlaskConical,
 } from 'lucide-react';
 
 const Sidebar = ({ role = 'patient', className = '' }) => {
@@ -28,11 +33,13 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
       { title: 'Invoices', icon: FileText, href: '/doctor/invoices' },
     ],
     patient: [
-      { title: 'Dashboard', icon: Home, href: '/patient' },
-      { title: 'Appointments', icon: Calendar, href: '/patient/appointments' },
-      { title: 'Prescriptions', icon: FileText, href: '/patient/prescriptions' },
-      { title: 'Consultation', icon: MessageSquare, href: '/patient/consultation' },
-      { title: 'Invoices', icon: FileText, href: '/patient/invoices' },
+      { title: 'Dashboard', icon: Home, href: '/pdashboard' },  
+      { title: 'View Appointments', icon: Calendar, href: '/patient/viewappointments' },  
+      { title: 'Book Appointment', icon: FilePlus, href: '/patient/prescriptions' },  
+      { title: 'Documents', icon: Folder, href: '/patient/consultation' },  
+      { title: 'Messages', icon: MessageSquare, href: '/patient/invoices' },  
+      { title: 'Prescriptions', icon: Clipboard, href: '/patient/invoices' },  
+      { title: 'Lab Report', icon: FlaskConical, href: '/patient/invoices' },  
     ],
   };
 

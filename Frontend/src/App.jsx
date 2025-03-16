@@ -5,7 +5,7 @@ import SignUp from './Page/Userauthentication/SignUp';
 import Login from './Page/Userauthentication/Login';
 import FormPage from './Page/Userauthentication/Personalinfo';
 import PatientDashboard from './Page/Patient/Dashboard';
-import AppointmentsList from './Page/Patient/Appointment';
+import AppointmentsList from './Page/Patient/ViewAppointment';
 import AdminLogin from './Page/Admin/Adminlogin';
 import AdminDashboard from './Page/Admin/Admindashboard';
 import DoctorList from './Page/Admin/Doctorlist';
@@ -23,9 +23,9 @@ function App() {
         <Route path="/" element={<Landingpage />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/personalinfo/:id" element={<FormPage />} />
-        <Route path="/Pdashboard/:id" element={<PatientDashboard />}/>
-        <Route path="/patient/appointments" element={<AppointmentsList />}/>
+        <Route path="/personalinfo" element={<FormPage />} />
+        <Route path="/Pdashboard" element={<PatientDashboard />}/>
+        <Route path="/patient/viewappointments" element={<AppointmentsList />}/>
         <Route path="/admin/Login" element={<AdminLogin />}/>
         <Route path="/admin/admindashboard" element={<AdminDashboard />}/>
         <Route path="/admin/doctorlist" element={<DoctorList />}/>

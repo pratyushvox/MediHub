@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Settings, Bell, ClipboardList, Calendar, FlaskRound as Flask, Pill, Bell as BellIcon } from "lucide-react";
 import Sidebar from "../../Component/Sidebar";
-import SlideImage from "../../Component/Slideimage";
+import { Card } from "../../component/Card";
+import Box from "../../Component/Box"; // Import the Box component
+import HealthOverview from "../../Component/Overview"; // Import the HealthOverview component
+import PatientNavbar from "../../Component/Patientnavbar"; // Import the new Navbar
 
 const PatientDashboard = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const { id } = useParams();
   const [fullName, setFullName] = useState("");
-  const storedUserId = localStorage.getItem("userId");
+  const storedUserId = localStorage.getItem("Userid");
   const userId = id || storedUserId;
 
   useEffect(() => {
@@ -30,34 +33,158 @@ const PatientDashboard = () => {
   return (
     <div className="flex">
       <Sidebar role="patient" />
-      <div className="flex flex-col w-full">
-        <div className="flex justify-end items-center gap-4 p-4">
-          <button 
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            onClick={() => {/* Add settings navigation */}}
-          >
-            <Settings className="w-6 h-6 text-gray-600" />
-          </button>
-          <div 
-            className="w-10 h-10 rounded-full bg-gray-200 cursor-pointer overflow-hidden"
-            onClick={() => navigate(`/Patient/profile`)} // Navigate to Patient Profile
-          >
-            <img
-              src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop"
-              alt="Profile"
-              className="w-full h-full object-cover"
+      <div className="flex flex-col w-full bg-gray-100 min-h-screen">
+        {/* New Navbar */}
+        <PatientNavbar pageTitle="Dashboard of Patients" />
+
+        {/* Main Content */}
+        <div className="p-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-[#0367A5]">Patient Dashboard</h1>
+              <p className="text-gray-600 text-lg">
+                Welcome back, {fullName || "Loading"}! Here's your health overview.
+              </p>
+            </div>
+            <button
+              className="px-4 py-2 bg-[#0367A5] text-white rounded-lg flex items-center gap-2 hover:bg-[#024e7a] transition"
+              onClick={() => navigate("/book-appointment")}
+            >
+              <span className="text-xl text-white">➕</span> Book Appointment
+            </button>
+          </div>
+
+          {/* Health Overview Component */}
+          
+          {/* Boxes Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Box
+              icon={<Calendar className="text-[#0367A5]" />}
+              count="1"
+              label="Total Appointments"
+              className="bg-white"
+              onClick={() => navigate("/appointments")}
+            />
+            <Box
+              icon={<ClipboardList className="text-[#3CB5AC]" />}
+              count="1"
+              label="Online Meeting"
+              className="bg-white"
+              onClick={() => navigate("/online-meetings")}
+            />
+            <Box
+              icon={<Pill className="text-[#70CFC5]" />}
+              count="1"
+              label="My Medicine"
+              className="bg-white"
+              onClick={() => navigate("/medicines")}
+            />
+            <Box
+              icon={<Flask className="text-[#70CFC5]" />}
+              count="1"
+              label="My Medicine"
+              className="bg-white"
+              onClick={() => navigate("/medicines")}
             />
           </div>
+
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card
+              title="Upcoming Appointment"
+              icon={<div className="bg-blue-100 p-2 rounded-full"><Calendar className="w-6 h-6 text-blue-500" /></div>}
+            >
+              <div className="h-[200px] flex flex-col">
+                <div className="flex-1">
+                  <div className="text-xl font-bold">March 18, 2025</div>
+                  <div className="text-gray-600 flex items-center gap-2 mt-2">
+                    <span>10:30 AM - Dr. Smith</span>
+                  </div>
+                  <div className="mt-4">
+                    <span className="bg-blue-50 text-blue-700 px-4 py-1 rounded-full text-sm">
+                      Annual Check-up
+                    </span>
+                  </div>
+                </div>
+                <button className="text-blue-600 hover:underline w-full text-center bg-blue-50 py-2 rounded-md">
+                  View All Appointments
+                </button>
+              </div>
+            </Card>
+
+            <Card
+              title="Recent Lab Results"
+              icon={<div className="bg-green-100 p-2 rounded-full"><Flask className="w-6 h-6 text-green-500" /></div>}
+            >
+              <div className="h-[200px] flex flex-col">
+                <div className="flex-1">
+                  <div className="flex justify-between items-center mb-4">
+                    <span>Cholesterol</span>
+                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                      Normal
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Blood Pressure</span>
+                    <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
+                      Elevated
+                    </span>
+                  </div>
+                </div>
+                <button className="text-green-600 hover:underline w-full text-center bg-green-50 py-2 rounded-md">
+                  View All Results
+                </button>
+              </div>
+            </Card>
+
+            <Card
+              title="Prescription Alerts"
+              icon={<div className="bg-red-100 p-2 rounded-full"><Pill className="w-6 h-6 text-red-500" /></div>}
+            >
+              <div className="h-[200px] flex flex-col">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-red-600">
+                    <span>Lisinopril Refill Due</span>
+                  </div>
+                  <div className="text-gray-600 mt-2">3 days remaining</div>
+                  <div className="mt-4 bg-gray-200 rounded-full h-2">
+                    <div className="bg-red-500 h-2 rounded-full w-1/4"></div>
+                  </div>
+                  <div className="text-right text-red-600 text-sm mt-1">25% left</div>
+                </div>
+                <button className="text-red-600 hover:underline w-full text-center bg-red-50 py-2 rounded-md">
+                  Manage Prescriptions
+                </button>
+              </div>
+            </Card>
+
+            <Card
+              title="Health Reminders"
+              icon={<div className="bg-purple-100 p-2 rounded-full"><BellIcon className="w-6 h-6 text-purple-500" /></div>}
+            >
+              <div className="h-[200px] flex flex-col">
+                <div className="flex-1">
+                  <div className="flex justify-between items-center mb-4">
+                    <span>Flu Shot</span>
+                    <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                      Due Soon
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Dental Check-up</span>
+                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+                      Upcoming
+                    </span>
+                  </div>
+                </div>
+                <button className="text-purple-600 hover:underline w-full text-center bg-purple-50 py-2 rounded-md">
+                  View All Reminders
+                </button>
+              </div>
+            </Card>
+          </div>
         </div>
-        <div className="p-6">
-          <h2 
-            className="text-4xl font-serif font-semibold text-gray-800" 
-            style={{ fontFamily: "'Roboto', sans-serif" }}
-          >
-            Welcome, {fullName || "Loading..."}
-          </h2>
-          <SlideImage />
-        </div>
+        <HealthOverview />
       </div>
     </div>
   );

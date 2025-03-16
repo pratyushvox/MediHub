@@ -7,8 +7,8 @@ import { toast } from "react-toastify";
 
 const FormPage = () => {
 
-  const { id } = useParams();
-  const userId = id ;
+  const  userId  = localStorage.getItem("Userid")
+  
   console.log("userId",userId); 
 
   const navigate = useNavigate();

@@ -1,4 +1,5 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import Doctor from '../../models/Doctor/Doctorsignupmodel.js';
 
 // Controller to handle doctor signup
@@ -15,6 +16,13 @@ const doctorSignup = async (req, res) => {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate a JWT token
+    const token = jwt.sign(
+      { email },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
     // Create a new doctor
     const newDoctor = new Doctor({
       name,
@@ -25,15 +33,27 @@ const doctorSignup = async (req, res) => {
       degree,
       phone,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      doctorToken: token, // Store token in DB
+      verified: true, // Assuming the doctor is verified upon signup
     });
 
     // Save the doctor to the database
     await newDoctor.save();
 
-    res.status(201).json({ message: 'Doctor signed up successfully' });
+    res.status(201).json({
+      message: 'Doctor signed up successfully',
+      token,
+      doctor: {
+        id: newDoctor._id,
+        name: newDoctor.name,
+        email: newDoctor.email,
+        phone: newDoctor.phone,
+        specialist: newDoctor.specialist,
+      },
+    });
   } catch (error) {
-    console.error(error);
+    console.error('Doctor signup error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

@@ -75,9 +75,9 @@ const Login = () => {
   
         // Check if personalinfo is null and navigate accordingly
         if (!personalInfo) {
-          navigate(`/personalinfo/${userId}`);
+          navigate(`/personalinfo`);
         } else {
-          navigate(`/Pdashboard/${userId}`);
+          navigate(`/Pdashboard`);
         }
       } catch (error) {
         console.error("Fetch error:", error.message);

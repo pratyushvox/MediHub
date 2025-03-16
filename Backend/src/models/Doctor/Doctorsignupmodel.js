@@ -10,7 +10,8 @@ const doctorSchema = new mongoose.Schema({
   degree: { type: String, required: true },
   phone: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
+  password: { type: String, required: true },
+  doctorToken: { type: String }, // Field to store JWT token
 });
 
 // Create a model for the Doctor schema

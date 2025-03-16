@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import Doctor from '../../models/Doctor/Doctorsignupmodel.js';
 
@@ -26,10 +26,14 @@ const doctorLogin = async (req, res) => {
       { expiresIn: '1h' }
     );
 
+    // Save the updated token in the database
+    doctor.doctorToken = token;
+    await doctor.save();
+
     res.status(200).json({ 
       message: 'Login successful', 
       token, 
-      doctorId: doctor._id
+      doctorId: doctor._id 
     });
   } catch (error) {
     console.error(error);
