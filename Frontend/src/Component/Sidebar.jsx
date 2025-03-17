@@ -35,7 +35,7 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
     patient: [
       { title: 'Dashboard', icon: Home, href: '/pdashboard' },  
       { title: 'View Appointments', icon: Calendar, href: '/patient/viewappointments' },  
-      { title: 'Book Appointment', icon: FilePlus, href: '/patient/prescriptions' },  
+      { title: 'Book Appointment', icon: FilePlus, href: '/patient/BookAppointment' },  
       { title: 'Documents', icon: Folder, href: '/patient/consultation' },  
       { title: 'Messages', icon: MessageSquare, href: '/patient/invoices' },  
       { title: 'Prescriptions', icon: Clipboard, href: '/patient/invoices' },  

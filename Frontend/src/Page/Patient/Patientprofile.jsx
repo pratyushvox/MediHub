@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, MessageSquare } from 'lucide-react';
-import Sidebar from '../../Component/Sidebar'; // Import Sidebar component
 
 function PatientProfile() {
   const [patientData, setPatientData] = useState({
     name: "",
     email: "",
-    image: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop",
     gender: "",
     birthDate: "",
     phoneNo: "",
     address: "",
     registeredDate: "",
-    notes: []
+    bloodGroup: "",
+    patientId: "",
+    emergencyContact: "",
+    allergies: [],
+    currentMedications: []
   });
 
   const [loading, setLoading] = useState(true);
@@ -35,25 +36,31 @@ function PatientProfile() {
         
         const userData = await response.json();
         
-        // Create notes array from medical conditions, major surgery, and blood group
-        const notesArray = [];
-        if (userData.personalinfo.medicalConditions) 
-          notesArray.push(userData.personalinfo.medicalConditions);
-        if (userData.personalinfo.majorSurgery) 
-          notesArray.push(userData.personalinfo.majorSurgery);
-        if (userData.personalinfo.bloodGroup) 
-          notesArray.push(`Blood Group: ${userData.personalinfo.bloodGroup}`);
+        // Extract allergies and medications from medical conditions if available
+        let allergies = [];
+        let medications = [];
+        
+        if (userData.personalinfo.allergies) {
+          allergies = userData.personalinfo.allergies.split(',').map(item => item.trim());
+        }
+        
+        if (userData.personalinfo.currentMedications) {
+          medications = userData.personalinfo.currentMedications.split(',').map(item => item.trim());
+        }
         
         setPatientData({
           name: userData.name,
           email: userData.email,
-          image: "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop", // Keep existing avatar
           gender: userData.personalinfo.gender || "",
           birthDate: userData.personalinfo.dobAD || "",
           phoneNo: userData.phone || userData.personalinfo.phoneNumber || "",
-          address: `${userData.personalinfo.address || ""}, ${userData.personalinfo.ward || ""}, ${userData.personalinfo.district || ""}, ${userData.personalinfo.province || ""}`,
+          address: `${userData.personalinfo.address || ""}, ${userData.personalinfo.district || ""}, ${userData.personalinfo.province || ""}`,
           registeredDate: new Date(userData.createdAt).toLocaleDateString(),
-          notes: notesArray
+          bloodGroup: userData.personalinfo.bloodGroup || "",
+          patientId: userData.patientId || `PAT-${new Date().getFullYear()}-${String(userId).padStart(3, '0')}`,
+          emergencyContact: userData.personalinfo.emergencyContact || "",
+          allergies: allergies.length > 0 ? allergies : ["None listed"],
+          currentMedications: medications.length > 0 ? medications : ["None listed"]
         });
         
         setLoading(false);
@@ -67,159 +74,149 @@ function PatientProfile() {
     fetchPatientData();
   }, []);
 
-  const appointments = [
-    {
-      date: "Nov 3",
-      time: "7:00-8:00",
-      doctor: "Pratyush Khadka",
-      treatment: "Bandages on broken hand"
-    },
-    {
-      date: "Nov 3",
-      time: "7:00-8:00",
-      doctor: "Pratyush Khadka",
-      treatment: "Bandages on broken hand"
-    }
-  ];
-
   if (loading) {
     return (
-      <div className="flex">
-        <Sidebar role="patient" />
-        <div className="min-h-screen bg-gray-50 p-8 w-full flex items-center justify-center">
-          <p>Loading patient data...</p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <p>Loading patient data...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex">
-        <Sidebar role="patient" />
-        <div className="min-h-screen bg-gray-50 p-8 w-full flex items-center justify-center">
-          <p className="text-red-500">Error loading patient data: {error}</p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <p className="text-red-500">Error loading patient data: {error}</p>
       </div>
     );
   }
 
+  // Get patient initials for the avatar
+  const getInitials = (name) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase();
+  };
+
   return (
-    <div className="flex">
-      {/* Sidebar for patient navigation */}
-      <Sidebar role="patient" />
-
-      <div className="min-h-screen bg-gray-50 p-8 w-full">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="flex justify-end gap-4 mb-8">
-            <button className="p-2 hover:bg-gray-100 rounded-full">
-              <Settings className="w-6 h-6" />
-            </button>
-            <div className="w-10 h-10 rounded-full bg-gray-200"></div>
+    <div className="bg-white shadow-md rounded-lg max-w-2xl mx-auto">
+      {/* Header with close button */}
+      <div className="flex justify-between items-center p-5 border-b">
+        <div className="flex items-center">
+          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Profile Card */}
-            <div className="bg-[#2E86C1] text-white rounded-lg p-6 text-center">
-              <img
-                src={patientData.image}
-                alt={patientData.name}
-                className="w-24 h-24 rounded-full mx-auto mb-4"
-              />
-              <h2 className="text-xl font-semibold mb-1">{patientData.name}</h2>
-              <p className="text-sm mb-4">{patientData.email}</p>
-              <button className="bg-white text-[#2E86C1] px-6 py-2 rounded-md flex items-center justify-center gap-2 w-full">
-                <MessageSquare className="w-4 h-4" />
-                Send Message
-              </button>
-            </div>
-
-            {/* Patient Details */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h3 className="font-medium">Gender</h3>
-                  <p>{patientData.gender}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Birth date</h3>
-                  <p>{patientData.birthDate}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Phone No</h3>
-                  <p>{patientData.phoneNo}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Address</h3>
-                  <p>{patientData.address}</p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Registered Date</h3>
-                  <p>{patientData.registeredDate}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div className="bg-white rounded-lg p-6 shadow-sm">
-              <h3 className="text-lg font-semibold mb-4">Notes</h3>
-              <ul className="space-y-2">
-                {patientData.notes.length > 0 ? (
-                  patientData.notes.map((note, index) => (
-                    <li key={index}>{note}</li>
-                  ))
-                ) : (
-                  <li>No medical notes available</li>
-                )}
-              </ul>
-            </div>
-          </div>
-
-          {/* Medical Records Tab */}
-          <div className="mt-8 bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-[#B2D6DE] p-4">
-              <div className="flex justify-between">
-                <button className="font-medium w-1/3 text-center py-2">Appointment</button>
-                <button className="font-medium w-1/3 text-center py-2">Medical Record</button>
-                <button className="font-medium w-1/3 text-center py-2">Prescription</button>
-              </div>
-            </div>
-
-            {/* Appointments Timeline */}
-            <div className="p-6">
-              <div className="space-y-6">
-                {appointments.map((appointment, index) => (
-                  <div key={index} className="flex">
-                    <div className="relative mr-4">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      {index !== appointments.length - 1 && (
-                        <div className="absolute top-3 left-1.5 w-0.5 h-16 bg-gray-200"></div>
-                      )}
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4 flex-1">
-                      <div className="flex justify-between mb-2">
-                        <div>
-                          <h4 className="font-semibold">{appointment.date}</h4>
-                          <p className="text-sm text-gray-500">{appointment.time}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Doctor</p>
-                        <p className="text-sm">{appointment.doctor}</p>
-                      </div>
-                      <div className="mt-2">
-                        <p className="text-sm font-medium">Treatment</p>
-                        <p className="text-sm">{appointment.treatment}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
+          <h1 className="text-lg font-medium">Patient Card</h1>
         </div>
+        <button className="text-gray-500 hover:text-gray-700">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div className="p-4">
+        <div className="flex flex-row">
+          {/* Avatar section */}
+          <div className="mr-6">
+            <div className="w-28 h-28 bg-purple-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
+              {getInitials(patientData.name)}
+            </div>
+            
+          </div>
+
+          {/* Patient details */}
+          <div className="flex-1 grid grid-cols-2 gap-x-2 gap-y-3">
+            <div>
+              <h3 className="text-gray-500 text-xs">FULL NAME</h3>
+              <p className="font-bold text-base">{patientData.name}</p>
+            </div>
+            <div>
+              <h3 className="text-gray-500 text-xs">PATIENT ID</h3>
+              <p className="font-bold text-base">{patientData.patientId}</p>
+            </div>
+            <div>
+              <h3 className="text-gray-500 text-xs">DATE OF BIRTH</h3>
+              <p className="font-bold text-base">{patientData.birthDate}</p>
+            </div>
+            <div>
+              <h3 className="text-gray-500 text-xs">BLOOD GROUP</h3>
+              <p className="font-bold text-base text-red-600">{patientData.bloodGroup}</p>
+            </div>
+            <div>
+              <h3 className="text-gray-500 text-xs">PHONE</h3>
+              <p className="font-bold text-base">{patientData.phoneNo}</p>
+            </div>
+            <div>
+              <h3 className="text-gray-500 text-xs">EMAIL</h3>
+              <p className="font-bold text-base">{patientData.email}</p>
+            </div>
+            <div className="col-span-2">
+              <h3 className="text-gray-500 text-xs">ADDRESS</h3>
+              <p className="font-bold text-base">{patientData.address}</p>
+            </div>
+            <div className="col-span-2">
+              <h3 className="text-gray-500 text-xs">EMERGENCY CONTACT</h3>
+              <p className="font-bold text-base">{patientData.emergencyContact}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Medical Information */}
+        <div className="mt-4">
+          <div className="flex items-center mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="mr-1 text-blue-500">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.5 12h15m0 0l-6.75-6.75M19.5 12l-6.75 6.75" />
+            </svg>
+            <h2 className="text-lg font-bold">Medical Information</h2>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Allergies */}
+            <div className="bg-red-50 p-3 rounded">
+              <div className="flex items-center mb-1">
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white mr-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </div>
+                <h3 className="text-red-700 font-bold text-sm">Allergies</h3>
+              </div>
+              <p className="text-red-800 text-sm">
+                {patientData.allergies.join(', ')}
+              </p>
+            </div>
+
+            {/* Current Medications */}
+            <div className="bg-yellow-50 p-3 rounded">
+              <div className="flex items-center mb-1">
+                <div className="w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center text-white mr-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                </div>
+                <h3 className="text-yellow-700 font-bold text-sm">Current Medications</h3>
+              </div>
+              <p className="text-yellow-800 text-sm">
+                {patientData.currentMedications.join(', ')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-gray-50 p-2 border-t flex justify-between items-center text-xs text-gray-500">
+        <div>Last Updated: {patientData.registeredDate}</div>
+        <div>Card ID: NC-{new Date().getFullYear()}-001</div>
       </div>
     </div>
   );

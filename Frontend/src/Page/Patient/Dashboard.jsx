@@ -32,13 +32,20 @@ const PatientDashboard = () => {
 
   return (
     <div className="flex">
-      <Sidebar role="patient" />
-      <div className="flex flex-col w-full bg-gray-100 min-h-screen">
-        {/* New Navbar */}
-        <PatientNavbar pageTitle="Dashboard of Patients" />
+      {/* Fixed Sidebar */}
+      <div className="fixed left-0 top-0 h-screen w-64 z-40">
+        <Sidebar role="patient" />
+      </div>
 
-        {/* Main Content */}
-        <div className="p-8">
+      {/* Main Content */}
+      <div className="flex flex-col w-full bg-gray-100 min-h-screen ml-64 mt-10">
+        {/* Fixed Navbar */}
+        <div className="fixed top-0 left-64 right-0 z-30">
+          <PatientNavbar pageTitle="Dashboard of Patients" />
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="pt-16 p-8"> {/* Add padding-top to account for the fixed navbar */}
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-2xl font-bold text-[#0367A5]">Patient Dashboard</h1>

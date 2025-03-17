@@ -184,13 +184,21 @@ const ViewAppointment = () => {
   };
 
   return (
-    <div className="flex flex-col">
-      {/* Navbar Component */}
-      <PatientNavbar pageTitle="View Appointments" />
-
-      <div className="flex">
+    <div className="flex">
+      {/* Fixed Sidebar */}
+      <div className="fixed left-0 top-0 h-screen w-64 z-40">
         <Sidebar />
-        <div className="container mx-auto p-4 flex-1">
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-col w-full bg-gray-100 min-h-screen ml-64 mt-10">
+        {/* Fixed Navbar */}
+        <div className="fixed top-0 left-64 right-0 z-30">
+          <PatientNavbar pageTitle="View Appointments" />
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="pt-16 p-8"> {/* Add padding-top to account for the fixed navbar */}
           {/* Header with search and buttons */}
           <div className="flex justify-between items-center mb-4">
             <div className="relative w-96">
