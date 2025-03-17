@@ -4,23 +4,20 @@ import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import PatientProfile from '../Page/Patient/Patientprofile';
 
 const PatientNavbar = ({ pageTitle }) => {
-  const navigate = useNavigate(); // Initialize navigate function
-
   const [showProfile, setShowProfile] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showUserPopup, setShowUserPopup] = useState(false);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const toggleProfilePopup = () => {
     setShowProfile(!showProfile);
   };
 
-  const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
+  const toggleUserPopup = () => {
+    setShowUserPopup(!showUserPopup);
   };
 
-  // Logout function to navigate to /login
   const handleLogout = () => {
-    // Perform any logout actions (e.g., clearing local storage, auth state)
-    navigate('/login'); // Redirect to login page
+    navigate('/login'); // Navigate to /login
   };
 
   return (
@@ -29,33 +26,29 @@ const PatientNavbar = ({ pageTitle }) => {
         <div className="flex-1">
           <h1 className="text-xl font-semibold text-gray-600">{pageTitle}</h1>
         </div>
-
-        <div className="flex gap-6 relative">
-          <FaCreditCard className="text-2xl text-[#0056b3] cursor-pointer hover:text-gray-300" />
+        
+        <div className="flex gap-6">
+          <FaCreditCard 
+            className="text-2xl text-[#0056b3] cursor-pointer hover:text-gray-300" 
+            onClick={toggleProfilePopup}
+          />
           <FaBell className="text-2xl text-[#0056b3] cursor-pointer hover:text-gray-300" />
-          
           <div className="relative">
             <FaUserCircle 
-              className="text-2xl text-[#0056b3] cursor-pointer hover:text-gray-300"
-              onClick={toggleDropdown} 
+              className="text-2xl text-[#0056b3] cursor-pointer hover:text-gray-300" 
+              onClick={toggleUserPopup}
             />
-            
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                <ul className="py-2">
-                  <li 
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={toggleProfilePopup}
-                  >
-                    Edit Profile
-                  </li>
-                  <li 
-                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                    onClick={handleLogout} // Navigate to /login
+            {showUserPopup && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50">
+                <div className="flex flex-col gap-2 p-2">
+                  <button className="text-left hover:bg-gray-100 p-2 rounded">Edit Profile</button>
+                  <button 
+                    className="text-left hover:bg-gray-100 p-2 rounded"
+                    onClick={handleLogout} // Add onClick handler for Logout
                   >
                     Logout
-                  </li>
-                </ul>
+                  </button>
+                </div>
               </div>
             )}
           </div>
