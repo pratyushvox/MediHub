@@ -14,8 +14,10 @@ const personalInfoSchema = new mongoose.Schema({
   bloodGroup: String,
   phoneNumber: String,
   emergencyContact: String,
-  majorSurgery: { type: String, default: "None" }
+  majorSurgery: { type: String, default: "None" },
+  allergies: { type: String, default: "None" }
 });
+
 
 
 const userSchema = new mongoose.Schema(

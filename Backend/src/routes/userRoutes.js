@@ -6,6 +6,7 @@ import { forgotPasswordRequest, verifyForgotPasswordOTP ,resetPassword } from '.
 import { updatePersonalInfo } from '../controllers/Usercontroller/Personalinfocontroller.js';
 import { getUserDetails } from "../controllers/Usercontroller/UserDetailsController.js";
 import { getAllUsers } from '../controllers/Usercontroller/Usersdetails.js';
+import { updateUserDetailsController } from '../controllers/Usercontroller/Updateuserdetails.js';
 
 const router = express.Router();
 
@@ -28,13 +29,17 @@ router.post('/reset-pass',resetPassword)
 //update personalinfo routes 
 router.put("/update-personal-info/:userId", updatePersonalInfo);
 
-
+//getting all user details
 router.get("/users", getAllUsers);
 //getting user details 
 router.get("/:userId", getUserDetails);
 
 
-//getting all user details
+//  updating the userdetails editig 
+router.put("/update-user-details/:userId", updateUserDetailsController)
+
+
+
 
 
 

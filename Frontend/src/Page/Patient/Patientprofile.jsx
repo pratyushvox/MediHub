@@ -13,7 +13,7 @@ function PatientProfile() {
     patientId: "",
     emergencyContact: "",
     allergies: [],
-    currentMedications: []
+    medicalConditions: []
   });
 
   const [loading, setLoading] = useState(true);
@@ -38,14 +38,14 @@ function PatientProfile() {
         
         // Extract allergies and medications from medical conditions if available
         let allergies = [];
-        let medications = [];
+        let medicalConditions = [];
         
         if (userData.personalinfo.allergies) {
           allergies = userData.personalinfo.allergies.split(',').map(item => item.trim());
         }
         
-        if (userData.personalinfo.currentMedications) {
-          medications = userData.personalinfo.currentMedications.split(',').map(item => item.trim());
+        if (userData.personalinfo.medicalConditions) {
+          medicalConditions = userData.personalinfo.medicalConditions.split(',').map(item => item.trim());
         }
         
         setPatientData({
@@ -60,7 +60,7 @@ function PatientProfile() {
           patientId: userData.patientId || `PAT-${new Date().getFullYear()}-${String(userId).padStart(3, '0')}`,
           emergencyContact: userData.personalinfo.emergencyContact || "",
           allergies: allergies.length > 0 ? allergies : ["None listed"],
-          currentMedications: medications.length > 0 ? medications : ["None listed"]
+          medicalConditions: medicalConditions.length > 0 ? medicalConditions : ["None listed"]
         });
         
         setLoading(false);
@@ -203,10 +203,10 @@ function PatientProfile() {
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                   </svg>
                 </div>
-                <h3 className="text-yellow-700 font-bold text-sm">Current Medications</h3>
+                <h3 className="text-yellow-700 font-bold text-sm">Medical Condition</h3>
               </div>
               <p className="text-yellow-800 text-sm">
-                {patientData.currentMedications.join(', ')}
+                {patientData.medicalConditions.join(', ')}
               </p>
             </div>
           </div>

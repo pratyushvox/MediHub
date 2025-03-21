@@ -1,16 +1,11 @@
 import React, { useState } from "react";
 import personalinfo from "../../Images/Personalinfobg.png";
 import Button from "../../Component/Button";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { baseUrl } from "../../Constant/Constant";
-import { toast } from "react-toastify";
 
 const FormPage = () => {
-
-  const  userId  = localStorage.getItem("Userid")
-  
-  console.log("userId",userId); 
-
+  const userId = localStorage.getItem("Userid");
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -24,6 +19,7 @@ const FormPage = () => {
     dobBS: "",
     medicalConditions: "",
     bloodGroup: "",
+    allergies: "",
     phoneNumber: "",
     emergencyContact: "",
     majorSurgery: "",
@@ -69,30 +65,33 @@ const FormPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (validateForm()) {
       const updatedData = {
         ...formData,
-        medicalConditions: formData.medicalConditions.trim() === "" ? "None" : formData.medicalConditions,
-        majorSurgery: formData.majorSurgery.trim() === "" ? "None" : formData.majorSurgery,
+        medicalConditions:
+          formData.medicalConditions.trim() === "" ? "None" : formData.medicalConditions,
+        majorSurgery:
+          formData.majorSurgery.trim() === "" ? "None" : formData.majorSurgery,
+        allergies: formData.allergies.trim() === "" ? "None" : formData.allergies,
       };
-  
+
       try {
         const response = await fetch(`${baseUrl}users/update-personal-info/${userId}`, {
-          method: "PUT", // Use "POST" if creating new data
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(updatedData),
         });
-  
+
         if (!response.ok) {
           throw new Error("Failed to update personal info");
         }
-        if(response.status === 200){
-          navigate(`/Pdashboard/${userId}`);
+        if (response.status === 200) {
+          navigate(`/Pdashboard`);
         }
-  
+
         const data = await response.json();
         console.log("Update successful:", data);
       } catch (error) {
@@ -100,7 +99,6 @@ const FormPage = () => {
       }
     }
   };
-  
 
   const districts = [
     "Achham",
@@ -190,11 +188,10 @@ const FormPage = () => {
     "Province No. 6",
     "Province No. 7",
   ];
-  const gender = [
-    "Male",
-    "Female",
-    "Others"
-  ]
+
+  const gender = ["Male", "Female", "Others"];
+
+  const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
   return (
     <div
@@ -257,8 +254,7 @@ const FormPage = () => {
 
           {/* Medical Information Section */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            
-          <select
+            <select
               name="gender"
               value={formData.gender}
               onChange={handleChange}
@@ -272,6 +268,7 @@ const FormPage = () => {
               ))}
             </select>
             {errors.gender && <p className="text-red-500 text-xs">{errors.gender}</p>}
+
             <input
               type="number"
               name="age"
@@ -304,10 +301,57 @@ const FormPage = () => {
             />
             {errors.dobBS && <p className="text-red-500 text-xs">{errors.dobBS}</p>}
 
+            <select
+              name="bloodGroup"
+              value={formData.bloodGroup}
+              onChange={handleChange}
+              className="border p-2 rounded w-full"
+            >
+              <option value="">Select Blood Group</option>
+              {bloodGroups.map((group, index) => (
+                <option key={index} value={group}>
+                  {group}
+                </option>
+              ))}
+            </select>
+            {errors.bloodGroup && <p className="text-red-500 text-xs">{errors.bloodGroup}</p>}
+
+            <input
+              type="text"
+              name="phoneNumber"
+              placeholder="Phone Number"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              className="border p-2 rounded w-full"
+            />
+            {errors.phoneNumber && <p className="text-red-500 text-xs">{errors.phoneNumber}</p>}
+
+            <input
+              type="text"
+              name="emergencyContact"
+              placeholder="Emergency Contact"
+              value={formData.emergencyContact}
+              onChange={handleChange}
+              className="border p-2 rounded w-full"
+            />
+            {errors.emergencyContact && (
+              <p className="text-red-500 text-xs">{errors.emergencyContact}</p>
+            )}
+          </div>
+
+          {/* Additional Medical Information */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
             <textarea
               name="medicalConditions"
               placeholder="Medical Conditions (e.g., Diabetes, Allergy, High Pressure). If none, leave empty."
               value={formData.medicalConditions}
+              onChange={handleChange}
+              className="border p-2 rounded w-full h-24"
+            />
+            <textarea
+              name="allergies"
+              placeholder="Allergies (e.g., Pollen, Dust, Food). If none, leave empty."
+              value={formData.allergies}
               onChange={handleChange}
               className="border p-2 rounded w-full h-24"
             />
@@ -322,10 +366,10 @@ const FormPage = () => {
 
           {/* Submit Button */}
           <Button
-  text="Continue →"
-  onClick={handleSubmit}
-  className="bg-[#0367A4] text-white py-2 px-4 rounded w-full hover:bg-[#3CB6AB] transition "
-/>
+            text="Continue →"
+            onClick={handleSubmit}
+            className="bg-[#0367A4] text-white py-2 px-4 rounded w-full hover:bg-[#3CB6AB] transition"
+          />
         </form>
       </div>
     </div>
