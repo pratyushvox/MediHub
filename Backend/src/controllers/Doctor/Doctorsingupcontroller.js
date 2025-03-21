@@ -4,7 +4,7 @@ import Doctor from '../../models/Doctor/Doctorsignupmodel.js';
 
 // Controller to handle doctor signup
 const doctorSignup = async (req, res) => {
-  const { name, availableTime, specialist, address, experience, degree, phone, email, password } = req.body;
+  const { name, availableTime, specialist, address, experience, degree, phone, email, password, price } = req.body; // Added price
 
   try {
     // Check if doctor already exists by email
@@ -34,6 +34,7 @@ const doctorSignup = async (req, res) => {
       phone,
       email,
       password: hashedPassword,
+      price, // Added price field
       doctorToken: token, // Store token in DB
       verified: true, // Assuming the doctor is verified upon signup
     });
@@ -50,6 +51,7 @@ const doctorSignup = async (req, res) => {
         email: newDoctor.email,
         phone: newDoctor.phone,
         specialist: newDoctor.specialist,
+        price: newDoctor.price, // Included price in response
       },
     });
   } catch (error) {

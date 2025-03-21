@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Clock, Calendar, ChevronRight, Clock3 } from 'lucide-react';
+import { Star, Clock, Calendar, ChevronRight, Clock3, DollarSign, MapPin, Video, MessageSquare } from 'lucide-react';
 import Sidebar from '../../Component/Sidebar';
 import PatientNavbar from '../../Component/Patientnavbar';
 
@@ -9,6 +9,8 @@ function BookAppointment() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [appointmentType, setAppointmentType] = useState('');
+  const [appointmentReason, setAppointmentReason] = useState('');
   const [doctors, setDoctors] = useState([]);
   const [specialties, setSpecialties] = useState(['All Doctors']);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
@@ -31,8 +33,10 @@ function BookAppointment() {
           experience: doctor.experience,
           // Using placeholder image since API doesn't provide images
           image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300',
-          availability: [doctor.availableTime, 'Online Consult'],
-          availableTime: doctor.availableTime
+          availableTime: doctor.availableTime,
+          price: doctor.price , // Use price from backend or default if not available
+          location: doctor.location || 'Medical Center, Floor 3', // Add location for physical visits
+          availableTypes: ['Physical Visit', 'Online Consultation'] // Both types of consultations
         }));
         
         setDoctors(formattedDoctors);
@@ -113,6 +117,12 @@ function BookAppointment() {
     setSelectedDoctor(doctor);
     setCurrentStep(2);
   };
+  
+  const handleContinueToStep3 = () => {
+    if (selectedDate && selectedTime && appointmentType) {
+      setCurrentStep(3);
+    }
+  };
 
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center gap-3 mb-8">
@@ -190,18 +200,30 @@ function BookAppointment() {
                     <Clock className="w-5 h-5" />
                     <span>{doctor.experience} years experience</span>
                   </div>
+                  <div className="flex items-center gap-1 text-gray-800 font-medium">
+                    
+                    <span>Consultation fee: {doctor.price}</span>
+                  </div>
+                  
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {doctor.availability.map((status, index) => (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {doctor.availableTypes.map((type, index) => (
                     <span
                       key={index}
                       className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-1"
                     >
-                      {status === 'Online Consult' && <Calendar className="w-4 h-4" />}
-                      {status}
+                      {type === 'Online Consultation' ? 
+                        <Video className="w-4 h-4" /> : 
+                        <MapPin className="w-4 h-4" />
+                      }
+                      {type}
                     </span>
                   ))}
+                </div>
+                
+                <div className="text-blue-600 text-sm">
+                  Available: {doctor.availableTime}
                 </div>
               </div>
               
@@ -223,7 +245,7 @@ function BookAppointment() {
   const renderStep2 = () => (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold mb-6">Select Date & Time</h2>
+        <h2 className="text-2xl font-semibold mb-6">Select Appointment Details</h2>
         
         {selectedDoctor && (
           <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg mb-6">
@@ -232,46 +254,86 @@ function BookAppointment() {
               alt={selectedDoctor.name}
               className="w-16 h-16 rounded-full object-cover"
             />
-            <div>
+            <div className="flex-1">
               <h3 className="text-lg font-semibold">{selectedDoctor.name}</h3>
               <span className="text-gray-600">{selectedDoctor.specialty}</span>
-              <p className="text-blue-600 text-sm mt-1">Available: {selectedDoctor.availableTime}</p>
+              <div className="flex items-center justify-between mt-2">
+                <p className="text-blue-600 text-sm">Available: {selectedDoctor.availableTime}</p>
+                <p className="text-green-600 text-sm font-medium flex items-center">
+                  {selectedDoctor.price}
+                </p>
+              </div>
             </div>
           </div>
         )}
 
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Select Date
-          </label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            min={new Date().toISOString().split('T')[0]}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Available Time Slots
-          </label>
-          <div className="grid grid-cols-3 gap-3">
-            {availableTimeSlots.map((time) => (
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Appointment Type
+            </label>
+            <div className="grid grid-cols-2 gap-4">
               <button
-                key={time}
-                onClick={() => setSelectedTime(time)}
-                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md border ${
-                  selectedTime === time
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'border-gray-300 hover:border-blue-500'
+                type="button"
+                onClick={() => setAppointmentType('Physical Visit')}
+                className={`flex items-center justify-center gap-3 p-4 rounded-lg border ${
+                  appointmentType === 'Physical Visit'
+                  ? 'border-blue-600 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 hover:border-blue-300'
                 }`}
               >
-                <Clock3 className="w-4 h-4" />
-                {time}
+                <MapPin className="w-5 h-5" />
+                <span className="font-medium">Physical Visit</span>
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => setAppointmentType('Online Consultation')}
+                className={`flex items-center justify-center gap-3 p-4 rounded-lg border ${
+                  appointmentType === 'Online Consultation'
+                  ? 'border-blue-600 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 hover:border-blue-300'
+                }`}
+              >
+                <Video className="w-5 h-5" />
+                <span className="font-medium">Online Consultation</span>
+              </button>
+            </div>
+            
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Date
+            </label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Available Time Slots
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              {availableTimeSlots.map((time) => (
+                <button
+                  key={time}
+                  onClick={() => setSelectedTime(time)}
+                  className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md border ${
+                    selectedTime === time
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'border-gray-300 hover:border-blue-500'
+                  }`}
+                >
+                  <Clock3 className="w-4 h-4" />
+                  {time}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -283,15 +345,166 @@ function BookAppointment() {
             Back
           </button>
           <button
-            onClick={() => setCurrentStep(3)}
-            disabled={!selectedDate || !selectedTime}
+            onClick={handleContinueToStep3}
+            disabled={!selectedDate || !selectedTime || !appointmentType}
             className={`px-6 py-2 rounded-md text-white flex items-center gap-2 ${
-              selectedDate && selectedTime
+              selectedDate && selectedTime && appointmentType
                 ? 'bg-blue-600 hover:bg-blue-700'
                 : 'bg-gray-400 cursor-not-allowed'
             }`}
           >
             Continue <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-2xl font-semibold mb-6">Appointment Details</h2>
+        
+        {selectedDoctor && (
+          <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg mb-6">
+            <img
+              src={selectedDoctor.image}
+              alt={selectedDoctor.name}
+              className="w-16 h-16 rounded-full object-cover"
+            />
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold">{selectedDoctor.name}</h3>
+              <span className="text-gray-600">{selectedDoctor.specialty}</span>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <span className="inline-flex items-center text-blue-600 text-sm">
+                  <Calendar className="w-4 h-4 mr-1" /> {selectedDate} at {selectedTime}
+                </span>
+                <span className="inline-flex items-center text-blue-600 text-sm">
+                  {appointmentType === 'Physical Visit' ? 
+                    <><MapPin className="w-4 h-4 mr-1" /> Physical Visit</> : 
+                    <><Video className="w-4 h-4 mr-1" /> Online Consultation</>
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Reason for Appointment *
+          </label>
+          <textarea
+            value={appointmentReason}
+            onChange={(e) => setAppointmentReason(e.target.value)}
+            placeholder="Please describe your symptoms or reason for this appointment..."
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 h-32"
+            required
+          />
+          <p className="mt-1 text-sm text-gray-500">
+            This information helps your doctor prepare for your appointment.
+          </p>
+        </div>
+  
+        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <h3 className="font-medium mb-2 flex items-center">
+            <DollarSign className="w-5 h-5 text-green-600 mr-1" />
+            Payment Summary
+          </h3>
+          <div className="flex justify-between py-2 border-b border-gray-200">
+            <span className="text-gray-700">Consultation Fee</span>
+            <span className="font-medium">{selectedDoctor?.price}</span>
+          </div>
+          <div className="flex justify-between py-2 mt-2">
+            <span className="text-gray-900 font-medium">Total</span>
+            <span className="text-green-600 font-bold">
+              {selectedDoctor?.price} {/* Only show the doctor's price */}
+            </span>
+          </div>
+        </div>
+  
+        <div className="mt-8 flex justify-between">
+          <button
+            onClick={() => setCurrentStep(2)}
+            className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Back
+          </button>
+          <button
+            onClick={() => setCurrentStep(4)}
+            disabled={!appointmentReason.trim()}
+            className={`px-6 py-2 rounded-md text-white flex items-center gap-2 ${
+              appointmentReason.trim()
+                ? 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-gray-400 cursor-not-allowed'
+            }`}
+          >
+            Confirm & Pay <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+  const renderStep4 = () => (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg shadow-md p-6 text-center">
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        </div>
+        <h2 className="text-2xl font-semibold mb-2">Appointment Confirmed!</h2>
+        <p className="text-gray-600 mb-6">Your appointment has been successfully booked.</p>
+        
+        {selectedDoctor && (
+          <div className="max-w-sm mx-auto bg-blue-50 rounded-lg p-4 mb-6">
+            <div className="space-y-2">
+              <p className="font-medium">{selectedDoctor.name}</p>
+              <div className="flex justify-between text-sm">
+                <span>Appointment Type:</span>
+                <span className="font-medium">{appointmentType}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Date & Time:</span>
+                <span className="font-medium">{selectedDate} at {selectedTime}</span>
+              </div>
+              {appointmentType === 'Physical Visit' && (
+                <div className="flex justify-between text-sm">
+                  <span>Location:</span>
+                  <span className="font-medium">{selectedDoctor.location}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span>Total Fee:</span>
+                <span className="font-medium text-green-600">
+                  ${(parseFloat(selectedDoctor?.price?.replace('$', '')) + 5).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="max-w-sm mx-auto bg-gray-50 rounded-lg p-4 mb-6 text-left">
+          <h3 className="font-medium mb-2 flex items-center">
+            <MessageSquare className="w-5 h-5 text-blue-600 mr-1" />
+            Your Reason for Visit
+          </h3>
+          <p className="text-gray-700 text-sm">{appointmentReason}</p>
+        </div>
+        
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => setCurrentStep(1)}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Book Another
+          </button>
+          <button
+            className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            View Appointments
           </button>
         </div>
       </div>
@@ -318,6 +531,8 @@ function BookAppointment() {
             {renderStepIndicator()}
             {currentStep === 1 && renderStep1()}
             {currentStep === 2 && renderStep2()}
+            {currentStep === 3 && renderStep3()}
+            {currentStep === 4 && renderStep4()}
           </div>
         </div>
       </div>

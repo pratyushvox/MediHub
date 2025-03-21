@@ -57,11 +57,11 @@ const DoctorList = () => {
   };
 
   const columns = [
-    
     { header: "Doctor Name", accessor: "name" },
     { header: "Contact No", accessor: "phone" },
     { header: "Specialist", accessor: "specialist" },
     { header: "Available Time", accessor: "availableTime" },
+    { header: "Consultation Fee (Rs)", accessor: "price" },
   ];
 
   const handleEdit = (doctor) => {

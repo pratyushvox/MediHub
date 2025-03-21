@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Video, Users, Clock, Settings } from 'lucide-react';
 import Box from '../../Component/Box';
+import DoctorProfile from './Doctorprofile'; // Import the DoctorProfile component
+import Editdocprofile from '../Doctor/Editdocprofile'; // Import the EditProfile component
 import { useNavigate } from 'react-router-dom';
+
 
 // Example data for appointments
 const appointments = [
@@ -13,19 +16,110 @@ const appointments = [
 ];
 
 function Doctordash() {
-  const navigate = useNavigate(); 
+  const [isProfileOpen, setIsProfileOpen] = useState(false); // State to control the DoctorProfile modal visibility
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false); // State to control the EditProfile modal visibility
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // State to control the settings dropdown visibility
+  const [doctorData, setDoctorData] = useState(null); // State to store the fetched doctor data
+  const [loading, setLoading] = useState(true); // State to handle loading state
+  const [error, setError] = useState(null); // State to handle errors
+  const navigate = useNavigate();
+
+  // Fetch doctor data from the API
+  useEffect(() => {
+    const fetchDoctorData = async () => {
+      try {
+        const doctorId = localStorage.getItem('doctorId'); // Get doctorId from localStorage
+        if (!doctorId) {
+          throw new Error('Doctor ID not found in localStorage');
+        }
+
+        const response = await fetch(`http://localhost:4000/api/doctor/${doctorId}`); // Fetch data
+        if (!response.ok) {
+          throw new Error('Failed to fetch doctor data');
+        }
+
+        const data = await response.json(); // Parse JSON response
+        setDoctorData(data); // Set the fetched data to state
+      } catch (err) {
+        setError(err.message); // Set error message
+      } finally {
+        setLoading(false); // Set loading to false
+      }
+    };
+
+    fetchDoctorData(); // Call the fetch function
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  const openProfileModal = () => {
+    setIsProfileOpen(true);
+  };
+
+  const closeProfileModal = () => {
+    setIsProfileOpen(false);
+  };
+
+  const openEditProfileModal = () => {
+    setIsEditProfileOpen(true);
+    setIsSettingsOpen(false); // Close the settings dropdown
+  };
+
+  const closeEditProfileModal = () => {
+    setIsEditProfileOpen(false);
+  };
+
+  const toggleSettingsDropdown = () => {
+    setIsSettingsOpen(!isSettingsOpen);
+  };
+
+  const handleLogout = () => {
+    // Handle logout action
+    localStorage.removeItem('doctorId'); // Clear doctorId from localStorage
+    navigate('/doctor/login'); // Navigate to the login page
+  };
+
+  if (loading) {
+    return <div className="text-center py-4">Loading...</div>; // Show loading state
+  }
+
+  if (error) {
+    return <div className="text-center py-4 text-red-500">Error: {error}</div>; // Show error state
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header with profile */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-8 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Welcome Dr Simpal!</h1>
+            <h1 className="text-2xl font-bold">Welcome Dr {doctorData?.name || 'User'}!</h1>
             <div className="flex items-center gap-4">
-              <Settings className="w-6 h-6 text-gray-600" />
+              <div className="relative">
+                <button
+                  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+                  onClick={toggleSettingsDropdown}
+                >
+                  <Settings className="w-6 h-6 text-gray-600" />
+                </button>
+                {isSettingsOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={openEditProfileModal} // Open the EditProfile modal
+                    >
+                      Edit Profile
+                    </button>
+                    <button
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={handleLogout} // Call handleLogout on click
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
-                onClick={() => navigate('/doctor/profile')} // Navigate to DoctorProfile
+                onClick={openProfileModal} // Open the profile modal
               >
                 <img
                   src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=50&h=50&fit=crop"
@@ -33,14 +127,32 @@ function Doctordash() {
                   className="w-10 h-10 rounded-full"
                 />
                 <div className="text-left hidden sm:block">
-                  <p className="text-sm font-medium text-gray-700">Dr. Simpal</p>
-                  <p className="text-xs text-gray-500">Cardiologist</p>
+                  <p className="text-sm font-medium text-gray-700">Dr. {doctorData?.name || 'User'}</p>
+                  <p className="text-xs text-gray-500">{doctorData?.specialist || 'Specialist'}</p>
                 </div>
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modal for DoctorProfile */}
+      {isProfileOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-5 max-w-2xl">
+            <DoctorProfile onClose={closeProfileModal} /> {/* Pass the close function as a prop */}
+          </div>
+        </div>
+      )}
+
+      {/* Modal for EditProfile */}
+      {isEditProfileOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg p-5 max-w-2xl">
+            <Editdocprofile onClose={closeEditProfileModal} /> {/* Pass the close function as a prop */}
+          </div>
+        </div>
+      )}
 
       <div className="max-w-7xl mx-auto px-8 py-8">
         {/* Using the Box component for different sections */}

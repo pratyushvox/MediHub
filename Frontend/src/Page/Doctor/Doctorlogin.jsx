@@ -41,20 +41,24 @@ const DoctorLogin = () => {
           },
           body: JSON.stringify(formData),
         });
-
+  
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-
+  
         const data = await res.json();
-
-        if (data && data.token) {
-          localStorage.setItem("authToken", data.token);
-
+  
+        if (data && data.token && data.doctorId) {
+          // Store the doctor's token and ID in local storage
+          localStorage.setItem("doctorToken", data.token);
+          localStorage.setItem("doctorId", data.doctorId);
+  
+          // Optionally, store other doctor details if needed
+          
           toast.success("Logged in successfully!");
           setFormData({ email: "", password: "" });
-
-          navigate(`/doctor/dashboard`); // Update navigation path for Doctor's dashboard
+  
+          navigate(`/doctor/dashboard`); // Navigate to the doctor's dashboard
         } else {
           throw new Error("Failed to log in. Please try again.");
         }
@@ -64,7 +68,6 @@ const DoctorLogin = () => {
       }
     }
   };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
