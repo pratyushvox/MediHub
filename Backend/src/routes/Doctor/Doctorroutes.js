@@ -4,6 +4,7 @@ import { doctorLogin } from '../../controllers/Doctor/Doctorlogincontroller.js';
 import { getDoctors } from '../../controllers/Doctor/Doctorlistcontroller.js';
 import { getDoctorDetails } from '../../controllers/Doctor/Doctordetailscontroller.js';
 import updateDocDetails from '../../controllers/Doctor/UpdateDocdetailscontroller.js';
+import { deleteDoctor } from '../../controllers/Doctor/DeleteDocdetails.js';
 
 const router = express.Router();
 
@@ -21,5 +22,8 @@ router.get('/doctor/:docid', getDoctorDetails);
 
 // PUT route for updating doctor details
 router.put('/doctor/updatedetails/:docid',updateDocDetails);
+
+// delete a doctor 
+router.delete("/doctor/deletedoctor/:docid", deleteDoctor);
 
 export default router;

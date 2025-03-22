@@ -1,7 +1,7 @@
-import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Pencil, Trash2, Eye } from 'lucide-react';
+import DeleteDialog from '../Component/Deletedialog';
 
-// A reusable table component that can be customized with different columns and data
 const ReusableTable = ({ 
   columns, 
   data, 
@@ -10,8 +10,11 @@ const ReusableTable = ({
   showActions = true,
   striped = true,
   hoverable = true,
-  bordered = true
+  bordered = true,
+  onClick
 }) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
   return (
     <div className="w-full overflow-x-auto">
       <table className="w-full min-w-full divide-y divide-gray-200">
@@ -37,6 +40,7 @@ const ReusableTable = ({
             <tr 
               key={rowIndex} 
               className={`
+                cursor-pointer
                 ${striped && rowIndex % 2 === 1 ? 'bg-gray-50' : ''}
                 ${hoverable ? 'hover:bg-gray-100' : ''}
                 ${bordered ? 'border-b border-gray-200' : ''}
@@ -48,15 +52,21 @@ const ReusableTable = ({
                 </td>
               ))}
               {showActions && (
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex space-x-4 justify-end">
                   <button 
-                    onClick={() => onEdit && onEdit(row)} 
-                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                    onClick={() => onClick && onClick(row)}
+                    className="text-blue-600 hover:text-blue-900"
+                  >
+                    <Eye size={16} />
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); onEdit && onEdit(row); }} 
+                    className="text-indigo-600 hover:text-indigo-900"
                   >
                     <Pencil size={16} />
                   </button>
                   <button 
-                    onClick={() => onDelete && onDelete(row)} 
+                    onClick={(e) => { e.stopPropagation(); onDelete && onDelete(row); }} 
                     className="text-red-600 hover:text-red-900"
                   >
                     <Trash2 size={16} />
@@ -67,6 +77,13 @@ const ReusableTable = ({
           ))}
         </tbody>
       </table>
+      
+      {showDeleteDialog && (
+        <DeleteDialog 
+          onClose={() => setShowDeleteDialog(false)} 
+          onConfirm={handleConfirmDelete} 
+        />
+      )}
     </div>
   );
 };

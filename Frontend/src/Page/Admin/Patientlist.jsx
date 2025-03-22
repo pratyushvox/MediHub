@@ -2,11 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { Search, Filter } from 'lucide-react';
 import Sidebar from '../../Component/Sidebar';
 import ReusableTable from '../../Component/Table';
+import PatientDialog from '../../Component/PatientDialog.jsx';
+import EditPatientDialog from '../../Component/Editpatientdialog.jsx';
+import { toast } from 'react-toastify';
 
 const PatientList = () => {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);  // For view dialog
+  const [editingPatient, setEditingPatient] = useState(null); 
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -36,10 +41,46 @@ const PatientList = () => {
     { header: 'Appointed Dr', accessor: 'appointedDoctor' },
   ];
 
-  const handleEdit = (patient) => {
-    console.log('Edit patient:', patient);
-    // Implement edit functionality
+  const handleEdit = async (patient) => {
+    if (!patient) return;
+    
+    try {
+      const updatedData = {
+        name: patient?.name,
+        phone: patient?.phone,
+        // Flatten the personalinfo fields
+        address: patient.personalinfo?.address || "",
+        district: patient.personalinfo?.district || "",
+        province: patient.personalinfo?.province || "",
+        bloodGroup: patient.personalinfo?.bloodGroup || "",
+        allergies: patient.personalinfo?.allergies || "",
+        medicalConditions: patient.personalinfo?.medicalConditions || "",
+         emergencyContact: patient.personalinfo?.emergencyContact || "",
+        // majorSurgery: patient.personalinfo?.majorSurgery || "",
+      };
+  
+      const response = await fetch(`http://localhost:4000/api/users/update-user-details/${patient._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to update user data");
+      }
+  
+      const updatedResponse = await response.json();
+      console.log("Updated response:", updatedResponse);
+      toast.success(updatedResponse.message);
+      setSelectedPatient(null); // Close the modal after successful save
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast.error(updatedResponse.message);
+    }
   };
+  
 
   const handleDelete = (patient) => {
     console.log('Delete patient:', patient);
@@ -74,24 +115,39 @@ const PatientList = () => {
         </div>
         
         <div className="bg-white rounded-lg shadow">
-          {loading ? (
-            <p className="p-4 text-center">Loading...</p>
-          ) : error ? (
-            <p className="p-4 text-center text-red-500">{error}</p>
-          ) : (
-            <ReusableTable
-              columns={columns}
-              data={patients}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              striped={true}
-              hoverable={true}
-              bordered={true}
-            />
-          )}
+  {loading ? (
+    <p className="p-4 text-center">Loading...</p>
+  ) : error ? (
+    <p className="p-4 text-center text-red-500">{error}</p>
+  ) : (
+    <ReusableTable
+      columns={columns}
+      data={patients}
+      onEdit={(patient) => setEditingPatient(patient)}
+      onDelete={handleDelete}
+      striped={true}
+      hoverable={true}
+      bordered={true}
+      onClick={(patient) => setSelectedPatient(patient)}
+    />
+  )}
+</div>
+
+{/* Render PatientDialog outside the table */}
+{selectedPatient && (
+  <PatientDialog user={selectedPatient} onClose={() => setSelectedPatient(null)} />
+)}
+
+{editingPatient && (
+  <EditPatientDialog data={editingPatient} onClose={() => setEditingPatient(null)} onSave={handleEdit}/>
+)}
+
+
+
+          
         </div>
       </div>
-    </div>
+    
   );
 };
 

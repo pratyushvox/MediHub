@@ -5,10 +5,18 @@ import ReusableTable from "../../Component/Table";
 import Button from "../../Component/Button";
 import DoctorSignup from "../Doctor/Doctorsignup";
 import { baseUrl } from "../../Constant/Constant.js";
+import DoctorDialog from "../../Component/DoctorDialog.jsx";
+import EditDoctorProfileDialog from "../../Component/Editdoctordialog.jsx";
+import DeleteDialog from "../../Component/Deletedialog.jsx";
+import {toast} from "react-toastify";
 
 const DoctorList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [doctors, setDoctors] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [editingDoctor, setEditingDoctor] = useState(null); 
+  const [deletingDoctor, setDeletingDoctor] = useState(null); 
+
 
   useEffect(() => {
     fetchDoctors();
@@ -18,12 +26,15 @@ const DoctorList = () => {
     try {
       const response = await fetch(`${baseUrl}doctor/getdoctor`);
       const data = await response.json();
+      console.log(data)
+
       
       // Filter out any non-doctor objects (like message objects)
       const validDoctors = data.filter(item => item._id && item.name);
       
       if (response.ok) {
         setDoctors(validDoctors);
+        
       } else {
         console.error("Failed to fetch doctors:", data.message);
       }
@@ -64,24 +75,55 @@ const DoctorList = () => {
     { header: "Consultation Fee (Rs)", accessor: "price" },
   ];
 
-  const handleEdit = (doctor) => {
-    console.log("Edit doctor:", doctor);
-  };
-
-  const handleDelete = async (doctorId) => {
+  const handleEdit = async (updatedDoctor) => {
     try {
-      const response = await fetch(`${baseUrl}doctor/delete/${doctorId}`, {
+      const response = await fetch(`${baseUrl}doctor/updatedetails/${updatedDoctor._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedDoctor),
+      });
+  
+      const responseData = await response.json();
+  
+      if (response.ok) {
+        // Refresh the doctor list after updating
+        await fetchDoctors();
+        setEditingDoctor(null);
+      } else {
+        console.error("Failed to update doctor:", responseData.message);
+      }
+    } catch (error) {
+      console.error("Error updating doctor:", error);
+    }
+  };
+  
+
+
+  const handleDelete = async (doctorToDelete) => {
+    console.log("doctortodelete", doctorToDelete)
+    if (!doctorToDelete) {
+      console.error("No doctor selected for deletion or invalid doctor ID");
+      return;
+    }
+        try {
+      const response = await fetch(`${baseUrl}doctor/deletedoctor/${doctorToDelete}`, {
         method: "DELETE",
       });
+
       if (response.ok) {
-        // Immediately fetch the updated list of doctors
-        await fetchDoctors();
+        await fetchDoctors(); // Refresh list after deletion
+        setDeletingDoctor(null);
+        toast.success("doctor deleted succesfully")
+      } else {
+        toast.error("Failed to delete doctor");
       }
     } catch (error) {
       console.error("Error deleting doctor:", error);
     }
   };
-
+   
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar role="admin" />
@@ -120,12 +162,29 @@ const DoctorList = () => {
           <ReusableTable
             columns={columns}
             data={doctors}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
+            onEdit={(doctor) => setEditingDoctor(doctor)}
+            onDelete={(doctor) => setDeletingDoctor(doctor)}
             striped
             hoverable
             bordered
+            onClick={(doctor) => setSelectedDoctor(doctor)}
           />
+          {selectedDoctor && (
+            <DoctorDialog user={selectedDoctor} onClose={() => setSelectedDoctor(null)} />
+          )}
+          {editingDoctor && (
+  <EditDoctorProfileDialog 
+    data={editingDoctor} 
+    onClose={() => setEditingDoctor(null)} 
+    onSave={handleEdit} 
+  />
+)}
+{deletingDoctor && 
+(<DeleteDialog 
+  onConfirm={() => handleDelete(deletingDoctor._id)} 
+  onClose={() => setDeletingDoctor(null)}/>
+)}
+
         </div>
       </div>
 
