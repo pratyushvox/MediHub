@@ -36,7 +36,7 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
       { title: 'Dashboard', icon: Home, href: '/pdashboard' },  
       { title: 'View Appointments', icon: Calendar, href: '/patient/viewappointments' },  
       { title: 'Book Appointment', icon: FilePlus, href: '/patient/BookAppointment' },  
-      { title: 'Documents', icon: Folder, href: '/patient/consultation' },  
+      { title: 'Documents', icon: Folder, href: '/Patient/Documentlist' },  
       { title: 'Messages', icon: MessageSquare, href: '/patient/invoices' },  
       { title: 'Prescriptions', icon: Clipboard, href: '/patient/invoices' },  
       { title: 'Lab Report', icon: FlaskConical, href: '/patient/invoices' },  

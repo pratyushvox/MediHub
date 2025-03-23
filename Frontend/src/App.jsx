@@ -15,6 +15,7 @@ import DoctorDashboard from './Page/Doctor/Docdashboard';
 import Doctorprofile from './Page/Doctor/Doctorprofile';
 import Patientprofile from './Page/Patient/Patientprofile';
 import BookAppointment from './Page/Patient/Bookappointment';
+import { DocumentList } from './Page/Patient/Document';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route path="/doctor/profile" element={<Doctorprofile />}/>
         <Route path="/Patient/profile" element={<Patientprofile />}/>
         <Route path="/Patient/BookAppointment" element={<BookAppointment />}/>
+        <Route path="/Patient/Documentlist" element={<DocumentList />}/>
 
 
 
