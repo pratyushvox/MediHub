@@ -8,11 +8,17 @@ const doctorSchema = new mongoose.Schema({
   address: { type: String, required: true },
   experience: { type: Number, required: true },
   degree: { type: String, required: true },
-  price: { type: Number, required: true }, // Added price field
+  price: { type: Number, required: true },
   phone: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  doctorToken: { type: String }, // Field to store JWT token
+  doctorToken: { type: String },
+  bookedslots: [
+    {
+      date: { type: String, required: true }, // Store date as a string (YYYY-MM-DD)
+      time: { type: String, required: true }, // Store time as a string (HH:mm)
+    },
+  ],
 });
 
 // Create a model for the Doctor schema

@@ -6,6 +6,8 @@ import userRoutes from './src/routes/userRoutes.js';
 import Adminroutes from "./src/routes/Admin/Adminroutes.js"
 import Doctorroutes from "./src/routes/Doctor/Doctorroutes.js"
 import Displaydataroutes from "./src/routes/Displaydataroutes.js"
+import AppointmentRoutes from "./src/routes/Appointment/AppointmentRoutes.js"
+import Paymentroutes from "./src/routes/Paymentroutes/Paymentroutes.js"
 
 
 dotenv.config();
@@ -21,6 +23,8 @@ app.use('/api/users', userRoutes);  // Updated to use "/api/users" for consisten
 app.use("/api", Adminroutes); 
 app.use('/api', Doctorroutes);
 app.use('/api', Displaydataroutes);
+app.use('/api', AppointmentRoutes);
+app.use('/api/Payment', Paymentroutes)
 
 
 

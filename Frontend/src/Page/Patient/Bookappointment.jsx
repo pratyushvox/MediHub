@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Clock, Calendar, ChevronRight, Clock3, DollarSign, MapPin, Video, MessageSquare } from 'lucide-react';
+import { Star, Clock, Calendar, ChevronRight, Clock3, DollarSign, MapPin, Video, MessageSquare,CreditCard, Wallet } from 'lucide-react';
 import Sidebar from '../../Component/Sidebar';
 import PatientNavbar from '../../Component/Patientnavbar';
 
 function BookAppointment() {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Doctors');
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
+  const [bookedPatient, setBookedPaitent] = useState(null);
+  const [bookedDoctorData, setBookedDoctorData] = useState(null);
+  const [bookedDoctor, setBookedDoctor] = useState('');
+  const [appointmentDate, setAppointmentDate] = useState('');
+  const [appointmentTime, setAppointmentTime] = useState('');
   const [appointmentType, setAppointmentType] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [price, setPrice] = useState('');
   const [appointmentReason, setAppointmentReason] = useState('');
   const [doctors, setDoctors] = useState([]);
   const [specialties, setSpecialties] = useState(['All Doctors']);
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   useEffect(() => {
     // Fetch doctors from API
@@ -57,11 +62,11 @@ function BookAppointment() {
 
   // Generate time slots when doctor is selected
   useEffect(() => {
-    if (selectedDoctor) {
-      const timeSlots = generateTimeSlots(selectedDoctor.availableTime);
+    if (bookedDoctorData) {
+      const timeSlots = generateTimeSlots(bookedDoctorData.availableTime);
       setAvailableTimeSlots(timeSlots);
     }
-  }, [selectedDoctor]);
+  }, [bookedDoctorData]);
 
   // Function to parse time range and generate 25-minute slots
   const generateTimeSlots = (availableTime) => {
@@ -114,19 +119,82 @@ function BookAppointment() {
     : doctors.filter(doctor => doctor.specialty === selectedSpecialty);
 
   const handleDoctorSelect = (doctor) => {
-    setSelectedDoctor(doctor);
+    setBookedDoctorData(doctor);
     setCurrentStep(2);
   };
   
   const handleContinueToStep3 = () => {
-    if (selectedDate && selectedTime && appointmentType) {
+    if (appointmentDate && appointmentTime && appointmentType) {
       setCurrentStep(3);
     }
   };
 
+  useEffect(() => {
+    if (bookedDoctorData) {
+      setPrice(bookedDoctorData.price);
+    }
+  }, [bookedDoctorData]); // ✅ Runs only when `bookedDoctorData` changes
+  
+
+
+  useEffect(() => {
+    const userId = localStorage.getItem("Userid");
+    setBookedPaitent(userId);
+  }, []); 
+
+  const handleBookAppointment = (selectedPaymentMethod) => {
+    fetch("http://localhost:4000/api/appointments/createAppointment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        bookedPatient,
+        bookedDoctor,
+        appointmentType,
+        appointmentReason,
+        appointmentDate,
+        appointmentTime,
+        paymentMethod: selectedPaymentMethod,
+        price,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("Appointment booked successfully:", data);
+  
+        if (selectedPaymentMethod === "online" && data.requiresPayment) {
+          // Initiate Khalti Payment
+          fetch("http://localhost:4000/api/payment/khalti/initiate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ appointmentId: data.appointmentId }),
+          })
+            .then((res) => res.json())
+            .then((paymentData) => {
+              console.log("Khalti Payment Initiated:", paymentData);
+              if (paymentData.payment_url) {
+                window.location.href = paymentData.payment_url; // Redirect to Khalti payment page
+              } else {
+                alert("Khalti payment initiation failed.");
+              }
+            })
+            .catch((error) => console.error("Error initiating Khalti payment:", error));
+        } else if (selectedPaymentMethod === "Cash") {
+          setCurrentStep(5); // Render Render5 component
+        }
+      })
+      .catch((error) => console.error("Network error:", error));
+  };
+  
+    
+  
+
   const renderStepIndicator = () => (
     <div className="flex items-center justify-center gap-3 mb-8">
-      {[1, 2, 3, 4].map((step) => (
+      {[1, 2, 3, 4,   5].map((step) => (
         <div key={step} className="flex items-center">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
             currentStep === step
@@ -135,7 +203,7 @@ function BookAppointment() {
           }`}>
             {step}
           </div>
-          {step < 4 && (
+          {step < 5 && (
             <div className="w-12 h-0.5 bg-gray-200 mx-2" />
           )}
         </div>
@@ -174,7 +242,13 @@ function BookAppointment() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDoctors.map((doctor) => (
-            <div key={doctor.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div key={doctor.id}
+            onClick={() => {
+              setPrice(doctor?.price);
+              setBookedDoctor(doctor?.id);
+            }
+            }
+            className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <img
@@ -247,20 +321,20 @@ function BookAppointment() {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-semibold mb-6">Select Appointment Details</h2>
         
-        {selectedDoctor && (
+        {bookedDoctorData && (
           <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg mb-6">
             <img
-              src={selectedDoctor.image}
-              alt={selectedDoctor.name}
+              src={bookedDoctorData.image}
+              alt={bookedDoctorData.name}
               className="w-16 h-16 rounded-full object-cover"
             />
             <div className="flex-1">
-              <h3 className="text-lg font-semibold">{selectedDoctor.name}</h3>
-              <span className="text-gray-600">{selectedDoctor.specialty}</span>
+              <h3 className="text-lg font-semibold">{bookedDoctorData.name}</h3>
+              <span className="text-gray-600">{bookedDoctorData.specialty}</span>
               <div className="flex items-center justify-between mt-2">
-                <p className="text-blue-600 text-sm">Available: {selectedDoctor.availableTime}</p>
+                <p className="text-blue-600 text-sm">Available: {bookedDoctorData.availableTime}</p>
                 <p className="text-green-600 text-sm font-medium flex items-center">
-                  {selectedDoctor.price}
+                  {bookedDoctorData.price}
                 </p>
               </div>
             </div>
@@ -307,8 +381,8 @@ function BookAppointment() {
             </label>
             <input
               type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              value={appointmentDate}
+              onChange={(e) => setAppointmentDate(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
               min={new Date().toISOString().split('T')[0]}
             />
@@ -322,9 +396,9 @@ function BookAppointment() {
               {availableTimeSlots.map((time) => (
                 <button
                   key={time}
-                  onClick={() => setSelectedTime(time)}
+                  onClick={() => setAppointmentTime(time)}
                   className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md border ${
-                    selectedTime === time
+                    appointmentTime === time
                       ? 'bg-blue-600 text-white border-blue-600'
                       : 'border-gray-300 hover:border-blue-500'
                   }`}
@@ -346,9 +420,9 @@ function BookAppointment() {
           </button>
           <button
             onClick={handleContinueToStep3}
-            disabled={!selectedDate || !selectedTime || !appointmentType}
+            disabled={!appointmentDate || !appointmentTime || !appointmentType}
             className={`px-6 py-2 rounded-md text-white flex items-center gap-2 ${
-              selectedDate && selectedTime && appointmentType
+              appointmentDate && appointmentTime && appointmentType
                 ? 'bg-blue-600 hover:bg-blue-700'
                 : 'bg-gray-400 cursor-not-allowed'
             }`}
@@ -365,19 +439,19 @@ function BookAppointment() {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-2xl font-semibold mb-6">Appointment Details</h2>
         
-        {selectedDoctor && (
+        {bookedDoctorData && (
           <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg mb-6">
             <img
-              src={selectedDoctor.image}
-              alt={selectedDoctor.name}
+              src={bookedDoctorData.image}
+              alt={bookedDoctorData.name}
               className="w-16 h-16 rounded-full object-cover"
             />
             <div className="flex-1">
-              <h3 className="text-lg font-semibold">{selectedDoctor.name}</h3>
-              <span className="text-gray-600">{selectedDoctor.specialty}</span>
+              <h3 className="text-lg font-semibold">{bookedDoctorData.name}</h3>
+              <span className="text-gray-600">{bookedDoctorData.specialty}</span>
               <div className="flex flex-wrap gap-2 mt-2">
                 <span className="inline-flex items-center text-blue-600 text-sm">
-                  <Calendar className="w-4 h-4 mr-1" /> {selectedDate} at {selectedTime}
+                  <Calendar className="w-4 h-4 mr-1" /> {appointmentDate} at {appointmentTime}
                 </span>
                 <span className="inline-flex items-center text-blue-600 text-sm">
                   {appointmentType === 'Physical Visit' ? 
@@ -413,12 +487,12 @@ function BookAppointment() {
           </h3>
           <div className="flex justify-between py-2 border-b border-gray-200">
             <span className="text-gray-700">Consultation Fee</span>
-            <span className="font-medium">{selectedDoctor?.price}</span>
+            <span className="font-medium">{bookedDoctorData?.price}</span>
           </div>
           <div className="flex justify-between py-2 mt-2">
             <span className="text-gray-900 font-medium">Total</span>
             <span className="text-green-600 font-bold">
-              {selectedDoctor?.price} {/* Only show the doctor's price */}
+              {bookedDoctorData?.price} {/* Only show the doctor's price */}
             </span>
           </div>
         </div>
@@ -431,16 +505,21 @@ function BookAppointment() {
             Back
           </button>
           <button
-            onClick={() => setCurrentStep(4)}
-            disabled={!appointmentReason.trim()}
-            className={`px-6 py-2 rounded-md text-white flex items-center gap-2 ${
-              appointmentReason.trim()
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-gray-400 cursor-not-allowed'
-            }`}
-          >
-            Confirm & Pay <ChevronRight className="w-4 h-4" />
-          </button>
+  onClick={() => {
+    if (appointmentReason.trim()) {
+      setShowPaymentDialog(true);
+    }
+  }}
+  disabled={!appointmentReason.trim()}
+  className={`px-6 py-2 rounded-md text-white flex items-center gap-2 ${
+    appointmentReason.trim()
+      ? 'bg-blue-600 hover:bg-blue-700'
+      : 'bg-gray-400 cursor-not-allowed'
+  }`}
+>
+  Confirm & Pay <ChevronRight className="w-4 h-4" />
+</button>
+
         </div>
       </div>
     </div>
@@ -458,28 +537,28 @@ function BookAppointment() {
         <h2 className="text-2xl font-semibold mb-2">Appointment Confirmed!</h2>
         <p className="text-gray-600 mb-6">Your appointment has been successfully booked.</p>
         
-        {selectedDoctor && (
+        {bookedDoctorData && (
           <div className="max-w-sm mx-auto bg-blue-50 rounded-lg p-4 mb-6">
             <div className="space-y-2">
-              <p className="font-medium">{selectedDoctor.name}</p>
+              <p className="font-medium">{bookedDoctorData.name}</p>
               <div className="flex justify-between text-sm">
                 <span>Appointment Type:</span>
                 <span className="font-medium">{appointmentType}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Date & Time:</span>
-                <span className="font-medium">{selectedDate} at {selectedTime}</span>
+                <span className="font-medium">{appointmentDate} at {appointmentTime}</span>
               </div>
               {appointmentType === 'Physical Visit' && (
                 <div className="flex justify-between text-sm">
                   <span>Location:</span>
-                  <span className="font-medium">{selectedDoctor.location}</span>
+                  <span className="font-medium">{bookedDoctorData.location}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm">
                 <span>Total Fee:</span>
                 <span className="font-medium text-green-600">
-                  ${(parseFloat(selectedDoctor?.price?.replace('$', '')) + 5).toFixed(2)}
+                  ${(parseFloat(bookedDoctorData?.price?.replace('$', '')) + 5).toFixed(2)}
                 </span>
               </div>
             </div>
@@ -493,6 +572,168 @@ function BookAppointment() {
           </h3>
           <p className="text-gray-700 text-sm">{appointmentReason}</p>
         </div>
+        
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => setCurrentStep(1)}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Book Another
+          </button>
+          <button
+            className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            View Appointments
+          </button>
+        </div>
+      </div>
+    </div>
+    
+  );
+  const renderPaymentDialog = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-xl font-semibold mb-4">Select Payment Method</h3>
+        <p className="text-gray-600 mb-6">How would you like to pay your consultation fee?</p>
+        
+        <div className="space-y-4 mb-6">
+          <button
+            onClick={() => {
+              setPaymentMethod('online');
+              setShowPaymentDialog(false);
+              setCurrentStep(4);
+              handleBookAppointment('online');
+            }}
+            className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-500"
+          >
+            <div className="flex items-center gap-3">
+              <CreditCard className="w-5 h-5 text-blue-600" />
+              <span>Pay Online Now</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+          
+          <button
+            onClick={() => {
+              setPaymentMethod('offline');
+              setShowPaymentDialog(false);
+              setCurrentStep(5);
+              handleBookAppointment('offline');
+            }}
+            className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-500"
+          >
+            <div className="flex items-center gap-3">
+              <Wallet className="w-5 h-5 text-green-600" />
+              <span>Pay Offline at Clinic</span>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+        
+        <button
+          onClick={() => setShowPaymentDialog(false)}
+          className="w-full py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+  const renderStep5 = () => (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg shadow-md p-6 text-center">
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <h2 className="text-2xl font-semibold mb-2">Appointment Request Sent!</h2>
+        <p className="text-gray-600 mb-4">Your appointment request has been sent to the clinic.</p>
+        <p className="text-gray-600 mb-6">Please pay the consultation fee when you visit the clinic.</p>
+        
+        {bookedDoctorData && (
+          <div className="max-w-sm mx-auto bg-blue-50 rounded-lg p-4 mb-6">
+            <div className="space-y-2">
+              <p className="font-medium">{bookedDoctorData.name}</p>
+              <div className="flex justify-between text-sm">
+                <span>Appointment Type:</span>
+                <span className="font-medium">{appointmentType}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Date & Time:</span>
+                <span className="font-medium">{appointmentDate} at {appointmentTime}</span>
+              </div>
+              {appointmentType === 'Physical Visit' && (
+                <div className="flex justify-between text-sm">
+                  <span>Location:</span>
+                  <span className="font-medium">{bookedDoctorData.location}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span>Fee to Pay:</span>
+                <span className="font-medium text-green-600">{bookedDoctorData.price}</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex justify-center gap-4">
+          <button
+            onClick={() => setCurrentStep(1)}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Book Another
+          </button>
+          <button
+            className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            View Appointments
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+  const renderStep6 = () => (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-white rounded-lg shadow-md p-6 text-center">
+        <div className="flex justify-center mb-6">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+        <h2 className="text-2xl font-semibold mb-2">Appointment Request Sent!</h2>
+        <p className="text-gray-600 mb-4">Your appointment request has been sent to the clinic.</p>
+        <p className="text-gray-600 mb-6">Please pay the consultation fee when you visit the clinic.</p>
+        
+        {bookedDoctorData && (
+          <div className="max-w-sm mx-auto bg-blue-50 rounded-lg p-4 mb-6">
+            <div className="space-y-2">
+              <p className="font-medium">{bookedDoctorData.name}</p>
+              <div className="flex justify-between text-sm">
+                <span>Appointment Type:</span>
+                <span className="font-medium">{appointmentType}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Date & Time:</span>
+                <span className="font-medium">{appointmentDate} at {appointmentTime}</span>
+              </div>
+              {appointmentType === 'Physical Visit' && (
+                <div className="flex justify-between text-sm">
+                  <span>Location:</span>
+                  <span className="font-medium">{bookedDoctorData.location}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span>Fee to Pay:</span>
+                <span className="font-medium text-green-600">{bookedDoctorData.price}</span>
+              </div>
+            </div>
+          </div>
+        )}
         
         <div className="flex justify-center gap-4">
           <button
@@ -533,9 +774,11 @@ function BookAppointment() {
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}
             {currentStep === 4 && renderStep4()}
+            {currentStep === 5 && renderStep5()}
           </div>
         </div>
       </div>
+      {showPaymentDialog && renderPaymentDialog()}
     </div>
   );
 }
