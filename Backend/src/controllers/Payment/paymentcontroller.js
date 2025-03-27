@@ -39,7 +39,7 @@ export const initiatePayment = async (req, res) => {
   
       // Prepare Khalti payload
       const payload = {
-        return_url: `${process.env.BASE_URL}/Patient/BookAppointment`,
+        return_url: `${process.env.BASE_URL}/api/payments/khalti/return`, // Using BASE_URL
         website_url: process.env.BASE_URL,
         amount: appointment.price * 100, // Convert to paisa
         purchase_order_id: payment._id.toString(),
@@ -81,63 +81,127 @@ export const initiatePayment = async (req, res) => {
     }
   };
 
-// Verify Khalti Payment 
-export const verifyPayment = async (req, res) => {
-    const { pidx, appointmentId } = req.body; // Move this outside try block
+
+  // Handle Khalti return URL redirect
+// Handle Khalti return URL redirect
+export const handlePaymentReturn = async (req, res) => {
+  try {
+    const { pidx, purchase_order_id } = req.query;
     
     if (!pidx) {
+      return res.redirect(`${process.env.BASE_URL}/Patient/BookAppointment?payment=failed&reason=missing_pidx`);
+    }
+
+    // Verify payment with Khalti
+    const verification = await verifyPayment({
+      body: { pidx, appointmentId: purchase_order_id }
+    }, res);
+
+    // If verification failed
+    if (!verification.success) {
+      return res.redirect(
+        `${process.env.BASE_URL}/Patient/BookAppointment?payment=failed&reason=${verification.error || "verification_failed"}`
+      );
+    }
+
+    // On success: Redirect back to booking page with success status
+    res.redirect(
+      `${process.env.BASE_URL}/Patient/BookAppointment?payment=success&appointmentId=${purchase_order_id}`
+    );
+
+  } catch (error) {
+    console.error('Return URL handling error:', error);
+    res.redirect(
+      `${process.env.BASE_URL}/Patient/BookAppointment?payment=failed&reason=server_error`
+    );
+  }
+};
+
+// Verify Khalti Payment 
+export const verifyPayment = async (req, res) => {
+  // Support both API calls (req.body) and redirects (req.query)
+  const { pidx, appointmentId } = req.body || req.query;
+  
+  if (!pidx) {
+    // Handle both API response and redirect case
+    if (res) {
       return res.status(400).json({
         success: false,
         message: "pidx is required",
       });
     }
+    return { success: false, message: "pidx is required" };
+  }
 
-    try {
-      // Verify with Khalti
-      const khaltiResponse = await axios.post(
-        `${KHALTI_BASE_URL}/epayment/lookup/`,
-        { pidx },
-        { headers: { Authorization: `Key ${KHALTI_SECRET_KEY}` } }
-      );
+  try {
+    // Verify with Khalti
+    const khaltiResponse = await axios.post(
+      `${KHALTI_BASE_URL}/epayment/lookup/`,
+      { pidx },
+      { headers: { Authorization: `Key ${KHALTI_SECRET_KEY}` } }
+    );
 
-      if (khaltiResponse.data.status !== "Completed") {
-        throw new Error("Payment not completed");
-      }
+    if (khaltiResponse.data.status !== "Completed") {
+      throw new Error("Payment not completed");
+    }
 
-      // Update payment record
-      const updatedPayment = await Payment.findOneAndUpdate(
-        { _id: khaltiResponse.data.purchase_order_id },
-        { status: "Completed" },
-        { new: true }
-      );
+    // Get the appointment ID either from params or Khalti response
+    const resolvedAppointmentId = appointmentId || khaltiResponse.data.purchase_order_id;
 
-      // Confirm appointment booking
-      await Appointment.findByIdAndUpdate(appointmentId, {
-        isBooking: true,
-        approvedByAdmin: true,
-        paymentStatus: "Paid"
-      });
+    // Update payment record
+    const updatedPayment = await Payment.findOneAndUpdate(
+      { _id: khaltiResponse.data.purchase_order_id },
+      { status: "Completed" },
+      { new: true }
+    );
 
-      res.json({ 
+    // Confirm appointment booking
+    await Appointment.findByIdAndUpdate(resolvedAppointmentId, {
+      isBooking: true,
+      approvedByAdmin: true,
+      paymentStatus: "Paid"
+    });
+
+    // Return appropriate response based on context
+    if (res) {
+      return res.json({ 
         success: true,
-        payment: updatedPayment
+        payment: updatedPayment,
+        appointmentId: resolvedAppointmentId
       });
+    }
+    
+    // For redirect cases
+    return { 
+      success: true, 
+      payment: updatedPayment,
+      appointmentId: resolvedAppointmentId
+    };
 
-    } catch (error) {
-      console.error("Payment verification error:", error.message);
+  } catch (error) {
+    console.error("Payment verification error:", error.message);
 
-      // Mark payment as failed
-      await Payment.findOneAndUpdate(
-        { khaltiPid: pidx }, // Now pidx is accessible here
-        { status: "Failed" }
-      );
+    // Mark payment as failed
+    await Payment.findOneAndUpdate(
+      { khaltiPid: pidx },
+      { status: "Failed" }
+    );
 
-      res.status(400).json({
+    // Return appropriate error response
+    if (res) {
+      return res.status(400).json({
         success: false,
         message: "Payment verification failed",
         error: error.message
       });
     }
+    
+    return { 
+      success: false, 
+      error: error.message,
+      message: "Payment verification failed" 
+    };
+  }
 };
   
 

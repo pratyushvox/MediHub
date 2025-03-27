@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Star, Clock, Calendar, ChevronRight, Clock3, DollarSign, MapPin, Video, MessageSquare,CreditCard, Wallet } from 'lucide-react';
 import Sidebar from '../../Component/Sidebar';
 import PatientNavbar from '../../Component/Patientnavbar';
+import { toast } from 'react-toastify';
+
 
 function BookAppointment() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -20,6 +22,7 @@ function BookAppointment() {
   const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     // Fetch doctors from API
@@ -41,7 +44,9 @@ function BookAppointment() {
           availableTime: doctor.availableTime,
           price: doctor.price , // Use price from backend or default if not available
           location: doctor.location || 'Medical Center, Floor 3', // Add location for physical visits
-          availableTypes: ['Physical Visit', 'Online Consultation'] // Both types of consultations
+          availableTypes: ['Physical Visit', 'Online Consultation'],
+          bookedslots: doctor.bookedslots || []
+           // Both types of consultations
         }));
         
         setDoctors(formattedDoctors);
@@ -61,58 +66,75 @@ function BookAppointment() {
   }, []);
 
   // Generate time slots when doctor is selected
-  useEffect(() => {
-    if (bookedDoctorData) {
-      const timeSlots = generateTimeSlots(bookedDoctorData.availableTime);
-      setAvailableTimeSlots(timeSlots);
-    }
-  }, [bookedDoctorData]);
+  // In the useEffect that generates time slots:
+useEffect(() => {
+  if (bookedDoctorData && appointmentDate) {
+    // Filter booked slots for the selected date
+    const bookedSlotsForDate = bookedDoctorData.bookedslots
+      ?.filter(slot => slot.date === appointmentDate)
+      .map(slot => slot.time) || [];
 
-  // Function to parse time range and generate 25-minute slots
-  const generateTimeSlots = (availableTime) => {
-    // Parse the time range (e.g., "7am-10am")
-    const timeRangeMatch = availableTime.match(/(\d+)([ap]m)-(\d+)([ap]m)/i);
-    
-    if (!timeRangeMatch) return [];
-    
-    let startHour = parseInt(timeRangeMatch[1]);
-    const startPeriod = timeRangeMatch[2].toLowerCase();
-    let endHour = parseInt(timeRangeMatch[3]);
-    const endPeriod = timeRangeMatch[4].toLowerCase();
-    
-    // Convert to 24-hour format
-    if (startPeriod === 'pm' && startHour !== 12) startHour += 12;
-    if (startPeriod === 'am' && startHour === 12) startHour = 0;
-    if (endPeriod === 'pm' && endHour !== 12) endHour += 12;
-    if (endPeriod === 'am' && endHour === 12) endHour = 0;
-    
-    const slots = [];
-    let currentHour = startHour;
-    let currentMinute = 0;
-    
-    // Generate slots every 25 minutes
-    while (currentHour < endHour || (currentHour === endHour && currentMinute === 0)) {
-      // Format the time
-      let hour = currentHour;
-      const period = hour >= 12 ? 'PM' : 'AM';
-      
-      // Convert to 12-hour format
-      if (hour > 12) hour -= 12;
-      if (hour === 0) hour = 12;
-      
-      // Add the slot
-      slots.push(`${hour}:${currentMinute.toString().padStart(2, '0')} ${period}`);
-      
-      // Increment by 25 minutes
-      currentMinute += 25;
-      if (currentMinute >= 60) {
-        currentHour += 1;
-        currentMinute = currentMinute - 60;
-      }
+    // Generate available time slots excluding the booked ones for this date
+    const timeSlots = generateTimeSlots(
+      bookedDoctorData.availableTime,
+      bookedSlotsForDate // Pass only the booked times for this date
+    );
+
+    setAvailableTimeSlots(timeSlots);
+  }
+}, [bookedDoctorData, appointmentDate]);
+
+// Updated generateTimeSlots function:
+const generateTimeSlots = (availableTime, bookedTimes = []) => {
+  // Parse the time range (e.g., "7am-10am")
+  const timeRangeMatch = availableTime.match(/(\d+)([ap]m)-(\d+)([ap]m)/i);
+  if (!timeRangeMatch) return [];
+
+  let startHour = parseInt(timeRangeMatch[1]);
+  const startPeriod = timeRangeMatch[2].toLowerCase();
+  let endHour = parseInt(timeRangeMatch[3]);
+  const endPeriod = timeRangeMatch[4].toLowerCase();
+
+  // Convert to 24-hour format
+  if (startPeriod === "pm" && startHour !== 12) startHour += 12;
+  if (startPeriod === "am" && startHour === 12) startHour = 0;
+  if (endPeriod === "pm" && endHour !== 12) endHour += 12;
+  if (endPeriod === "am" && endHour === 12) endHour = 0;
+
+  const slots = [];
+  let currentHour = startHour;
+  let currentMinute = 0;
+
+  // Generate slots every 25 minutes
+  while (currentHour < endHour || (currentHour === endHour && currentMinute === 0)) {
+    let hour = currentHour;
+    const period = hour >= 12 ? "PM" : "AM";
+
+    // Convert to 12-hour format
+    if (hour > 12) hour -= 12;
+    if (hour === 0) hour = 12;
+
+    // Format the time
+    const timeSlot = `${hour}:${currentMinute.toString().padStart(2, "0")} ${period}`;
+
+    // Only add slot if it's not booked
+    if (!bookedTimes.includes(timeSlot)) {
+      slots.push(timeSlot);
     }
-    
-    return slots;
-  };
+
+    // Increment by 25 minutes
+    currentMinute += 25;
+    if (currentMinute >= 60) {
+      currentHour += 1;
+      currentMinute = currentMinute - 60;
+    }
+  }
+
+  return slots;
+};
+
+  
+  
 
   const filteredDoctors = selectedSpecialty === 'All Doctors' 
     ? doctors 
@@ -142,53 +164,84 @@ function BookAppointment() {
     setBookedPaitent(userId);
   }, []); 
 
-  const handleBookAppointment = (selectedPaymentMethod) => {
-    fetch("http://localhost:4000/api/appointments/createAppointment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        bookedPatient,
-        bookedDoctor,
-        appointmentType,
-        appointmentReason,
-        appointmentDate,
-        appointmentTime,
-        paymentMethod: selectedPaymentMethod,
-        price,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Appointment booked successfully:", data);
+  const handleBookAppointment = async (selectedPaymentMethod) => {
+    try {
+      // 1. First create the appointment
+      const appointmentRes = await fetch("http://localhost:4000/api/appointments/createAppointment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}` // Add auth header
+        },
+        body: JSON.stringify({
+          bookedPatient,
+          bookedDoctor,
+          appointmentType,
+          appointmentReason,
+          appointmentDate,
+          appointmentTime,
+          paymentMethod: selectedPaymentMethod,
+          price,
+        }),
+      });
   
-        if (selectedPaymentMethod === "online" && data.requiresPayment) {
-          // Initiate Khalti Payment
-          fetch("http://localhost:4000/api/payment/khalti/initiate", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ appointmentId: data.appointmentId }),
-          })
-            .then((res) => res.json())
-            .then((paymentData) => {
-              console.log("Khalti Payment Initiated:", paymentData);
-              if (paymentData.payment_url) {
-                window.location.href = paymentData.payment_url; // Redirect to Khalti payment page
-              } else {
-                alert("Khalti payment initiation failed.");
-              }
-            })
-            .catch((error) => console.error("Error initiating Khalti payment:", error));
-        } else if (selectedPaymentMethod === "Cash") {
-          setCurrentStep(5); // Render Render5 component
+      const appointmentData = await appointmentRes.json();
+  
+      if (!appointmentRes.ok) {
+        throw new Error(appointmentData.message || "Failed to create appointment");
+      }
+  
+      // 2. Handle payment based on method
+      if (selectedPaymentMethod === "Khalti") {
+        // Initiate Khalti payment
+        const paymentRes = await fetch("http://localhost:4000/api/payments/khalti/initiate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          },
+          body: JSON.stringify({ 
+            appointmentId: appointmentData._id // Use the created appointment ID
+          }),
+        });
+  
+        const paymentData = await paymentRes.json();
+  
+        if (paymentData.payment_url) {
+          window.location.href = paymentData.payment_url;
+        } else {
+          throw new Error("Failed to initiate Khalti payment");
         }
-      })
-      .catch((error) => console.error("Network error:", error));
+      } else {
+        // For offline payments
+        setCurrentStep(5); // Show confirmation
+      }
+    } catch (error) {
+      console.error("Booking error:", error);
+      toast.error(error.message);
+      // Optionally revert to step 3 to allow retry
+      setCurrentStep(3);
+    }
   };
+
+  useEffect(() => {
+    // Handle payment callback from Khalti
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    const appointmentId = params.get('appointmentId');
   
+    if (paymentStatus === 'success') {
+      toast.success(`Payment successful! Appointment ID: ${appointmentId}`);
+      // Clear URL params
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setCurrentStep(4); // Show success screen
+    } else if (paymentStatus === 'failed') {
+      toast.error(`Payment failed: ${params.get('reason')}`);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setCurrentStep(3); // Return to booking form
+    }
+  }, []);
+
     
   
 
@@ -527,15 +580,18 @@ function BookAppointment() {
   const renderStep4 = () => (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-lg shadow-md p-6 text-center">
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-        </div>
-        <h2 className="text-2xl font-semibold mb-2">Appointment Confirmed!</h2>
-        <p className="text-gray-600 mb-6">Your appointment has been successfully booked.</p>
+      <div className="mb-6">
+  <h4 className="font-medium mb-2">Next Steps:</h4>
+  {paymentMethod === 'Khalti' ? (
+    <p className="text-sm text-gray-600">
+      Your payment was successful. You'll receive a confirmation email shortly.
+    </p>
+  ) : (
+    <p className="text-sm text-gray-600">
+      Please visit the clinic 10 minutes before your appointment time with your payment.
+    </p>
+  )}
+</div>
         
         {bookedDoctorData && (
           <div className="max-w-sm mx-auto bg-blue-50 rounded-lg p-4 mb-6">
@@ -591,54 +647,49 @@ function BookAppointment() {
     
   );
   const renderPaymentDialog = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
-        <h3 className="text-xl font-semibold mb-4">Select Payment Method</h3>
-        <p className="text-gray-600 mb-6">How would you like to pay your consultation fee?</p>
-        
-        <div className="space-y-4 mb-6">
-          <button
-            onClick={() => {
-              setPaymentMethod('online');
-              setShowPaymentDialog(false);
-              setCurrentStep(4);
-              handleBookAppointment('online');
-            }}
-            className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-500"
-          >
-            <div className="flex items-center gap-3">
-              <CreditCard className="w-5 h-5 text-blue-600" />
-              <span>Pay Online Now</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
-          
-          <button
-            onClick={() => {
-              setPaymentMethod('offline');
-              setShowPaymentDialog(false);
-              setCurrentStep(5);
-              handleBookAppointment('offline');
-            }}
-            className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-500"
-          >
-            <div className="flex items-center gap-3">
-              <Wallet className="w-5 h-5 text-green-600" />
-              <span>Pay Offline at Clinic</span>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400" />
-          </button>
-        </div>
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white rounded-lg p-6 max-w-md w-full">
+      <h3 className="text-xl font-semibold mb-4">Select Payment Method</h3>
+      
+      <div className="space-y-4 mb-6">
+        <button
+          onClick={() => {
+            setPaymentMethod('Khalti');
+            setShowPaymentDialog(false);
+            handleBookAppointment('Khalti');
+          }}
+          className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-500"
+        >
+          <div className="flex items-center gap-3">
+            <img 
+              src="/khalti-logo.png" 
+              alt="Khalti" 
+              className="h-6" 
+            />
+            <span>Pay with Khalti</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-400" />
+        </button>
         
         <button
-          onClick={() => setShowPaymentDialog(false)}
-          className="w-full py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+          onClick={() => {
+            setPaymentMethod('Cash');
+            setShowPaymentDialog(false);
+            handleBookAppointment('Cash');
+          }}
+          className="w-full flex items-center justify-between p-4 border border-gray-300 rounded-lg hover:border-blue-500"
         >
-          Cancel
+          <div className="flex items-center gap-3">
+            <Wallet className="w-5 h-5 text-green-600" />
+            <span>Pay at Clinic</span>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-400" />
         </button>
       </div>
     </div>
-  );
+  </div>
+);
+  
   const renderStep5 = () => (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-lg shadow-md p-6 text-center">

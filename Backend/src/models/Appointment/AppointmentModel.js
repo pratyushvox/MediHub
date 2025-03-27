@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
+import User from "../Usermodel/userModel.js";
+
 
 const appointmentSchema = new mongoose.Schema(
     {
         bookedPatient: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Patient",
+            ref: "User",
             required: true
         },
         bookedDoctor: {

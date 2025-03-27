@@ -3,19 +3,29 @@ import { FaUsers, FaUserMd, FaProcedures, FaMoneyBillWave } from "react-icons/fa
 import { useNavigate } from "react-router-dom"; 
 import Sidebar from "../../Component/Sidebar"; 
 import Box from "../../Component/Box"; 
-import { baseUrl } from "../../Constant/Constant"; // Import baseUrl from your configuration file
+import { baseUrl } from "../../Constant/Constant"; 
 
 const AdminDashboard = () => {   
   const navigate = useNavigate();
   const [dashboardData, setDashboardData] = useState({
     totalDoctors: 0,
-    totalPatients: 0
+    totalPatients: 0,
+    totalAppointments: 0,
+    totalIncome: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [allAppointments, setAllAppointments] = useState([]);
+  const [confirmedAppointments, setConfirmedAppointments] = useState([]);
+  const [appointmentRequests, setAppointmentRequests] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState({ 
+    show: false, 
+    action: null, 
+    id: null,
+    message: ""
+  });
 
   useEffect(() => {
-    // Function to fetch dashboard data from the API
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
@@ -40,14 +50,166 @@ const AdminDashboard = () => {
       }
     };
 
-    // Call the fetch function when component mounts
+    const fetchAppointments = async () => {
+      try {
+        const response = await fetch(`${baseUrl}appointments/getAppointment`);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+        const result = await response.json();
+        
+        setAllAppointments(result);
+        
+        const confirmed = result.filter(app => app.isBooking);
+        setConfirmedAppointments(confirmed);
+        
+        const totalIncome = confirmed.reduce((sum, app) => sum + (app.price || 0), 0);
+        
+        setDashboardData(prev => ({
+          ...prev,
+          totalIncome,
+          totalAppointments: confirmed.length
+        }));
+        
+        const filteredRequests = result.filter(app => 
+          app && !app.isBooking && app.paymentMethod === "Cash"
+        );
+        setAppointmentRequests(filteredRequests);
+      } catch (err) {
+        console.error("Error fetching appointments:", err);
+        setError(err.message);
+      }
+    };
+
     fetchDashboardData();
+    fetchAppointments();
   }, []);
+
+  const handleApproval = async (appointmentId) => {
+    try {
+      setConfirmDialog({ show: false, action: null, id: null });
+
+      const response = await fetch(`${baseUrl}payment/offline/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ appointmentId }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message || "Failed to approve appointment");
+      }
+  
+      // Refresh data to ensure consistency with server
+      await fetchAppointments();
+      
+    } catch (err) {
+      console.error("Error approving appointment:", err);
+      setError(err.message);
+      fetchAppointments();
+    }
+  };
+  
+  const fetchAppointments = async () => {
+    try {
+      const response = await fetch(`${baseUrl}appointments/getAppointment`);
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+  
+      const result = await response.json();
+      
+      setAllAppointments(result);
+      
+      const confirmed = result.filter(app => app.isBooking);
+      setConfirmedAppointments(confirmed);
+      
+      const totalIncome = confirmed.reduce((sum, app) => sum + (app.price || 0), 0);
+      
+      setDashboardData(prev => ({
+        ...prev,
+        totalIncome,
+        totalAppointments: confirmed.length
+      }));
+      
+      const filteredRequests = result.filter(app => 
+        app && !app.isBooking && app.paymentMethod === "Cash"
+      );
+      setAppointmentRequests(filteredRequests);
+    } catch (err) {
+      console.error("Error fetching appointments:", err);
+      setError(err.message);
+    }
+  };
+
+  const handleRejection = async (appointmentId) => {
+    try {
+      setConfirmDialog({ show: false, action: null, id: null });
+  
+      const response = await fetch(`${baseUrl}appointments/reject/${appointmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization header if needed
+          // 'Authorization': `Bearer ${token}`
+        }
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const result = await response.json();
+      
+      if (result.message === "Appointment deleted successfully") {
+        setAppointmentRequests(prevRequests => 
+          prevRequests.filter(app => app._id !== appointmentId)
+        );
+        fetchAppointments();
+      } else {
+        throw new Error(result.message || "Failed to reject appointment");
+      }
+    } catch (err) {
+      console.error("Error rejecting appointment:", err);
+      setError(err.message);
+    }
+  };
+
+  const showConfirmationDialog = (action, id) => {
+    const message = action === "approve" 
+      ? "Are you sure you want to approve this appointment?" 
+      : "Are you sure you want to reject this appointment?";
+    
+    setConfirmDialog({
+      show: true,
+      action,
+      id,
+      message
+    });
+  };
+
+  const handleConfirm = () => {
+    if (confirmDialog.action === "approve") {
+      handleApproval(confirmDialog.id);
+    } else if (confirmDialog.action === "reject") {
+      handleRejection(confirmDialog.id);
+    }
+  };
 
   const handleLogout = () => {     
     localStorage.removeItem("authToken");     
     navigate("/Admin/login");   
   };    
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? dateString : date.toLocaleDateString();
+  };
 
   return (     
     <div className="flex h-screen bg-gray-100">       
@@ -72,8 +234,8 @@ const AdminDashboard = () => {
             />           
             <Box 
               icon={<FaUserMd />} 
-              count={23} 
-              label="Total Appointment" 
+              count={dashboardData.totalAppointments} 
+              label="Total Appointments" 
               className="bg-[#5BA4D3] text-white"
             />           
             <Box 
@@ -84,7 +246,7 @@ const AdminDashboard = () => {
             />           
             <Box 
               icon={<FaMoneyBillWave />} 
-              count={23} 
+              count={`Rs. ${dashboardData.totalIncome}`} 
               label="Total Income" 
               className="bg-[#54AFA2] text-white"
             />         
@@ -115,67 +277,137 @@ const AdminDashboard = () => {
               <table className="w-full">
                 <thead className="sticky top-0 bg-gray-100">
                   <tr>
-                    <th className="p-2 text-left">Patient Name</th>
-                    <th className="p-2 text-left">Doctor Name</th>
-                    <th className="p-2 text-left">Phone Number</th>
-                    <th className="p-2 text-left">Time</th>
-                    <th className="p-2 text-left">Action</th>
+                    <th className="p-2 text-left">Patient</th>
+                    <th className="p-2 text-left">Doctor</th>
+                    <th className="p-2 text-left">Date/Time</th>
+                    <th className="p-2 text-left">Payment</th>
+                    <th className="p-2 text-left">Amount</th>
+                    <th className="p-2 text-left">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[...Array(10)].map((_, index) => (
-                    <tr key={index} className="border-b">
-                      <td className="p-2">Pratyush Khadka</td>
-                      <td className="p-2">Pratyush Khadka</td>
-                      <td className="p-2">Pratyush Khadka</td>
-                      <td className="p-2">7-8</td>
-                      <td className="p-2">
-                        <span className="text-green-500">✓</span>
-                        <span className="text-red-500 ml-2">×</span>
+                  {appointmentRequests.length > 0 ? (
+                    appointmentRequests.map((appointment) => (
+                      <tr key={appointment._id} className="border-b hover:bg-gray-50">
+                        <td className="p-2">
+                          <div className="font-medium">{appointment.bookedPatient?.name || "Unknown"}</div>
+                          <div className="text-sm text-gray-500">{appointment.bookedPatient?.phone || "N/A"}</div>
+                        </td>
+                        <td className="p-2">
+                          <div className="font-medium">{appointment.bookedDoctor?.name || "Unknown"}</div>
+                          <div className="text-sm text-gray-500">{appointment.bookedDoctor?.specialist || "N/A"}</div>
+                        </td>
+                        <td className="p-2">
+                          <div>{formatDate(appointment.appointmentDate)}</div>
+                          <div className="text-sm text-gray-500">{appointment.appointmentTime || "N/A"}</div>
+                        </td>
+                        <td className="p-2">{appointment.paymentMethod || "N/A"}</td>
+                        <td className="p-2">Rs. {appointment.price || "0"}</td>
+                        <td className="p-2">
+                          <button 
+                            className="text-green-500 px-2 hover:text-green-700"
+                            onClick={() => showConfirmationDialog("approve", appointment._id)}
+                            title="Approve"
+                          >
+                            ✓
+                          </button>
+                          <button 
+                            className="text-red-500 px-2 hover:text-red-700"
+                            onClick={() => showConfirmationDialog("reject", appointment._id)}
+                            title="Reject"
+                          >
+                            ×
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="p-2 text-center text-gray-500">
+                        No pending appointments.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
 
-          {/* Total Appointment Table */}
+          {/* Confirmed Appointments Table */}
           <div className="bg-white rounded-lg shadow-md flex flex-col">
             <div className="p-4 border-b font-bold text-[#0665A7]">
-              Total Appointment
+              Confirmed Appointments
             </div>
             <div className="overflow-y-auto max-h-64">
               <table className="w-full">
                 <thead className="sticky top-0 bg-gray-100">
                   <tr>
-                    <th className="p-2 text-left">Patient Name</th>
-                    <th className="p-2 text-left">Doctor Name</th>
-                    <th className="p-2 text-left">Time</th>
+                    <th className="p-2 text-left">Patient</th>
+                    <th className="p-2 text-left">Doctor</th>
+                    <th className="p-2 text-left">Date/Time</th>
+                    <th className="p-2 text-left">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {[...Array(10)].map((_, index) => (
-                    <tr 
-                      key={index} 
-                      className={`
-                        ${index % 4 === 0 ? 'bg-red-50' : 
-                          index % 4 === 1 ? 'bg-yellow-50' : 
-                          index % 4 === 2 ? 'bg-green-50' : 'bg-red-50'}
-                        border-b
-                      `}
-                    >
-                      <td className="p-2">Pratyush Khadka</td>
-                      <td className="p-2">Dr. Samer Shrestha</td>
-                      <td className="p-2">10:50</td>
+                  {confirmedAppointments.length > 0 ? (
+                    confirmedAppointments.map((appointment) => (
+                      <tr key={appointment._id} className="border-b hover:bg-gray-50">
+                        <td className="p-2">
+                          <div className="font-medium">{appointment.bookedPatient?.name || "Unknown"}</div>
+                          <div className="text-sm text-gray-500">{appointment.bookedPatient?.phone || "N/A"}</div>
+                        </td>
+                        <td className="p-2">
+                          <div className="font-medium">{appointment.bookedDoctor?.name || "Unknown"}</div>
+                          <div className="text-sm text-gray-500">{appointment.bookedDoctor?.specialist || "N/A"}</div>
+                        </td>
+                        <td className="p-2">
+                          <div>{formatDate(appointment.appointmentDate)}</div>
+                          <div className="text-sm text-gray-500">{appointment.appointmentTime || "N/A"}</div>
+                        </td>
+                        <td className="p-2">Rs. {appointment.price || "0"}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="p-2 text-center text-gray-500">
+                        No confirmed appointments found.
+                      </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
-        
+
+        {/* Confirmation Dialog */}
+        {confirmDialog.show && (
+          <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
+              <h3 className="text-lg font-medium mb-4">Confirm Action</h3>
+              <p className="mb-4">{confirmDialog.message}</p>
+              <div className="flex justify-end space-x-3">
+                <button 
+                  onClick={() => setConfirmDialog({ show: false, action: null, id: null })}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleConfirm}
+                  className={`px-4 py-2 rounded-md text-white ${
+                    confirmDialog.action === "approve" 
+                      ? "bg-green-500 hover:bg-green-600" 
+                      : "bg-red-500 hover:bg-red-600"
+                  }`}
+                >
+                  {confirmDialog.action === "approve" ? "Approve" : "Reject"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <button           
           onClick={handleLogout}           
           className="mt-6 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"         
