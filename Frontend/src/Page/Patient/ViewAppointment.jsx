@@ -1,10 +1,16 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ReusableTable from "../../Component/Table"; // Adjust the path based on your project structure
 import Sidebar from "../../Component/Sidebar"; // Import your Sidebar component
 import PatientNavbar from "../../Component/PatientNavbar"; // Import PatientNavbar component
 import { Search, Calendar, Filter, ChevronDown, Eye } from "lucide-react";
+import axios from "axios"; // Make sure axios is imported
+import { baseUrl } from "../../Constant/Constant"; // Import baseUrl from constants folder
 
 const ViewAppointment = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   // Define columns for the table
   const columns = [
     { 
@@ -13,8 +19,8 @@ const ViewAppointment = () => {
       // Custom rendering for patient cell
       render: (patient) => (
         <div className="flex items-center gap-3">
-          <div className={`${patient.color} text-white w-10 h-10 rounded-full flex items-center justify-center`}>
-            {patient.initials}
+          <div className={`bg-purple-500 text-white w-10 h-10 rounded-full flex items-center justify-center`}>
+            {patient.name.split(' ').map(name => name[0]).join('')}
           </div>
           <div>
             <div className="font-medium text-blue-600">{patient.name}</div>
@@ -29,8 +35,8 @@ const ViewAppointment = () => {
       // Custom rendering for doctor cell
       render: (doctor) => (
         <div className="flex items-center gap-3">
-          <div className={`${doctor.color} text-white w-10 h-10 rounded-full flex items-center justify-center`}>
-            {doctor.initials}
+          <div className={`bg-red-400 text-white w-10 h-10 rounded-full flex items-center justify-center`}>
+            {doctor.name.split(' ').map(name => name[0]).join('')}
           </div>
           <div>
             <div className="font-medium">{doctor.name}</div>
@@ -63,7 +69,7 @@ const ViewAppointment = () => {
       accessor: "status",
       // Custom rendering for status cell
       render: (status) => {
-        if (status === "Confirmed") {
+        if (status === "Accepted") {
           return (
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,7 +78,7 @@ const ViewAppointment = () => {
               <span className="text-green-500">Confirmed</span>
             </div>
           );
-        } else {
+        } else if (status === "Rejected") {
           return (
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -81,50 +87,80 @@ const ViewAppointment = () => {
               <span className="text-red-500">Canceled</span>
             </div>
           );
+        } else {
+          return (
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span className="text-yellow-500">Pending</span>
+            </div>
+          );
         }
       }
     }
   ];
 
-  // Prepare data in the format needed for the table
-  const tableData = [
-    {
-      id: 1,
-      patient: {
-        name: "Trith Shah",
-        email: "tirth@gmail.com",
-        initials: "TS",
-        color: "bg-purple-500"
-      },
-      doctor: {
-        name: "Shikha Pandey",
-        email: "shikha@gmail.com",
-        initials: "SP",
-        color: "bg-red-400"
-      },
-      department: "Cardiologist & Diabetologist",
-      date: "5:00 PM · 10th Mar, 2025",
-      status: "Confirmed"
-    },
-    {
-      id: 2,
-      patient: {
-        name: "Trith Shah",
-        email: "tirth@gmail.com",
-        initials: "TS",
-        color: "bg-purple-500"
-      },
-      doctor: {
-        name: "Hello Nice",
-        email: "nicehello@gmail.com",
-        initials: "HN",
-        color: "bg-teal-400"
-      },
-      department: "Assumenda eius incid",
-      date: "11:00 AM · 22nd Feb, 2025",
-      status: "Canceled"
+  useEffect(() => {
+    // Get userId from local storage
+    const userId = localStorage.getItem("Userid");
+    
+    if (!userId) {
+      setError("User ID not found in local storage");
+      setLoading(false);
+      return;
     }
-  ];
+    
+    // Fetch appointments
+    const fetchAppointments = async () => {
+      try {
+        const response = await axios.get(`${baseUrl}appointments/getAppointment`);
+        
+        // Filter appointments based on userId
+        const userAppointments = response.data.filter(
+          appointment => appointment.bookedPatient._id === userId
+        );
+        
+        // Transform data to match table format
+        const formattedAppointments = userAppointments.map(appointment => ({
+          id: appointment._id,
+          patient: {
+            name: appointment.bookedPatient.name,
+            email: appointment.bookedPatient.email
+          },
+          doctor: {
+            name: appointment.bookedDoctor.name,
+            email: appointment.bookedDoctor.email
+          },
+          department: appointment.bookedDoctor.specialist.replace('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase()), // Format specialist field as department
+          date: `${appointment.appointmentTime} · ${formatDate(appointment.appointmentDate)}`,
+          status: appointment.approvedByAdmin
+        }));
+        
+        setAppointments(formattedAppointments);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching appointments:", error);
+        setError("Failed to fetch appointments");
+        setLoading(false);
+      }
+    };
+    
+    fetchAppointments();
+  }, []);
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.toLocaleString('default', { month: 'short' });
+    const year = date.getFullYear();
+    
+    // Add ordinal suffix to day
+    const suffix = ['th', 'st', 'nd', 'rd'][day % 10 > 3 ? 0 : (day % 100 - day % 10 !== 10 ? day % 10 : 0)];
+    
+    return `${day}${suffix} ${month}, ${year}`;
+  };
 
   // Custom table actions
   const customActions = (row) => (
@@ -205,7 +241,7 @@ const ViewAppointment = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search patients..."
+                placeholder="Search appointments..."
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -228,18 +264,33 @@ const ViewAppointment = () => {
             </div>
           </div>
 
-          {/* Table */}
-          <EnhancedTable
-            columns={columns}
-            data={tableData}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            showActions={true}
-            striped={false}
-            hoverable={true}
-            bordered={true}
-            renderActions={customActions}
-          />
+          {/* Loading, Error, or Table */}
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+              <p>{error}</p>
+            </div>
+          ) : appointments.length === 0 ? (
+            <div className="bg-gray-100 p-8 text-center rounded-lg">
+              <h3 className="text-xl font-medium text-gray-700">No appointments found</h3>
+              <p className="text-gray-500 mt-2">You haven't booked any appointments yet.</p>
+            </div>
+          ) : (
+            <EnhancedTable
+              columns={columns}
+              data={appointments}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              showActions={true}
+              striped={false}
+              hoverable={true}
+              bordered={true}
+              renderActions={customActions}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -2,9 +2,12 @@ import express from "express";
 import { 
   initiatePayment, 
   verifyPayment,
-  handlePaymentReturn, // Add this new handler
-  approveOfflinePayment
+  
+  approveOfflinePayment,
+  rejectOfflinePayment,
+  
 } from "../../controllers/Payment/paymentcontroller.js";
+import { updatePaymentStatus } from "../../controllers/Payment/Updatepaymentstatuscontroller.js";
 
 const router = express.Router();
 
@@ -15,9 +18,17 @@ router.post("/khalti/initiate", initiatePayment);
 router.post("/khalti/verify", verifyPayment);
 
 // Handle payment return (for redirect after Khalti payment)
-router.get("/khalti/return", handlePaymentReturn);
 
 // Offline payments
-router.post("/offline/approve", approveOfflinePayment);
+router.put("/offline/approve", approveOfflinePayment);
+router.put("/offline/reject", rejectOfflinePayment );
+
+
+router.put("/:appointmentId/status", updatePaymentStatus);
+
+
+
+
+
 
 export default router;

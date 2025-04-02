@@ -25,4 +25,5 @@ const paymentSchema = new mongoose.Schema({
   metadata: mongoose.Schema.Types.Mixed // For additional payment details
 }, { timestamps: true });
 
-export default mongoose.model("Payment", paymentSchema);
+const Payment = mongoose.model("Payment", paymentSchema);
+export default Payment;

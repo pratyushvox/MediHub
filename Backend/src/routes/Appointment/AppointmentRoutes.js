@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.post("/appointments/createAppointment", createAppointment);
 router.put("/appointments/editAppointment", editAppointment);
-router.delete("/appointments/reject/:id", deleteAppointment);
+router.delete("/appointments/delete/:id", deleteAppointment);
 router.get("/appointments/getAppointment", getAppointments);
 router.put("/appointments/:appointmentId/status", updateAppointmentStatus);
 

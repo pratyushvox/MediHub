@@ -16,6 +16,10 @@ import Doctorprofile from './Page/Doctor/Doctorprofile';
 import Patientprofile from './Page/Patient/Patientprofile';
 import BookAppointment from './Page/Patient/Bookappointment';
 import { DocumentList } from './Page/Patient/Document';
+import ViewAppointmentlist from './Page/Admin/Appointment';
+import PaymentStatusPage from './Page/Admin/Paymentstatus';
+import VerifyPayment from './Page/Patient/Verify';
+import SuccessPage from './Page/Patient/OnlinebookingSuccess';
 
 function App() {
   return (
@@ -38,6 +42,10 @@ function App() {
         <Route path="/Patient/profile" element={<Patientprofile />}/>
         <Route path="/Patient/BookAppointment" element={<BookAppointment />}/>
         <Route path="/Patient/Documentlist" element={<DocumentList />}/>
+        <Route path="/admin/viewappointmentlist" element={<ViewAppointmentlist/>}/>
+        <Route path="/admin/paymentstatus" element={<PaymentStatusPage/>}/>
+        <Route path="/payment/verify" element={<VerifyPayment/>}/>
+        <Route path="/payment/sucess" element={<SuccessPage/>}/>
 
 
 

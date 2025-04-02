@@ -11,7 +11,9 @@ export const createAppointment = async (req, res) => {
             appointmentDate, 
             appointmentTime, 
             paymentMethod,  // 'online' or 'offline'
-            price 
+            price ,
+            
+
         } = req.body;
 
         // Validate required fields
@@ -32,8 +34,9 @@ export const createAppointment = async (req, res) => {
             price,
             paymentMethod: paymentMethod === 'online' ? 'Khalti' : 'Cash',
             isBooking: false, // Always false initially - will update after payment/admin approval
-            approvedByAdmin: paymentMethod === 'online', // Will become true after payment verification
-            paymentStatus: paymentMethod === 'online' ? 'Pending' : 'Pending' // Both start as Pending
+            approvedByAdmin: "", // Will become true after payment verification
+            paymentStatus: paymentMethod === 'online' ? 'Pending' : 'Pending', // Both start as Pending
+            
         });
 
         await newAppointment.save();

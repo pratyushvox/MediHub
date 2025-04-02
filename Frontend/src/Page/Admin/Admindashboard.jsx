@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react"; 
+import React, { useState, useEffect, useCallback } from "react"; 
 import { FaUsers, FaUserMd, FaProcedures, FaMoneyBillWave } from "react-icons/fa"; 
 import { useNavigate } from "react-router-dom"; 
 import Sidebar from "../../Component/Sidebar"; 
 import Box from "../../Component/Box"; 
 import { baseUrl } from "../../Constant/Constant"; 
+import { toast } from "react-toastify";
 
 const AdminDashboard = () => {   
   const navigate = useNavigate();
@@ -24,99 +25,35 @@ const AdminDashboard = () => {
     id: null,
     message: ""
   });
+  const [processingId, setProcessingId] = useState(null);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${baseUrl}Displaydata`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          setDashboardData(result.data);
-        } else {
-          throw new Error("Failed to fetch dashboard data");
-        }
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchAppointments = async () => {
-      try {
-        const response = await fetch(`${baseUrl}appointments/getAppointment`);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-        const result = await response.json();
-        
-        setAllAppointments(result);
-        
-        const confirmed = result.filter(app => app.isBooking);
-        setConfirmedAppointments(confirmed);
-        
-        const totalIncome = confirmed.reduce((sum, app) => sum + (app.price || 0), 0);
-        
-        setDashboardData(prev => ({
-          ...prev,
-          totalIncome,
-          totalAppointments: confirmed.length
-        }));
-        
-        const filteredRequests = result.filter(app => 
-          app && !app.isBooking && app.paymentMethod === "Cash"
-        );
-        setAppointmentRequests(filteredRequests);
-      } catch (err) {
-        console.error("Error fetching appointments:", err);
-        setError(err.message);
-      }
-    };
-
-    fetchDashboardData();
-    fetchAppointments();
-  }, []);
-
-  const handleApproval = async (appointmentId) => {
+  const fetchDashboardData = async () => {
     try {
-      setConfirmDialog({ show: false, action: null, id: null });
-
-      const response = await fetch(`${baseUrl}payment/offline/approve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ appointmentId }),
-      });
-  
+      setLoading(true);
+      const response = await fetch(`${baseUrl}Displaydata`);
+      
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
+      
       const result = await response.json();
       
-      if (!result.success) {
-        throw new Error(result.message || "Failed to approve appointment");
+      if (result.success) {
+        setDashboardData(result.data);
+        toast.success("Dashboard data loaded successfully");
+      } else {
+        throw new Error("Failed to fetch dashboard data");
       }
-  
-      // Refresh data to ensure consistency with server
-      await fetchAppointments();
-      
     } catch (err) {
-      console.error("Error approving appointment:", err);
+      console.error("Error fetching dashboard data:", err);
       setError(err.message);
-      fetchAppointments();
+      toast.error(`Failed to load dashboard: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
   };
-  
-  const fetchAppointments = async () => {
+
+  const fetchAppointments = useCallback(async () => {
     try {
       const response = await fetch(`${baseUrl}appointments/getAppointment`);
       if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -125,10 +62,15 @@ const AdminDashboard = () => {
       
       setAllAppointments(result);
       
-      const confirmed = result.filter(app => app.isBooking);
+      const confirmed = result.filter(app => app.approvedByAdmin === "Accepted");
       setConfirmedAppointments(confirmed);
       
-      const totalIncome = confirmed.reduce((sum, app) => sum + (app.price || 0), 0);
+      const totalIncome = result.reduce((sum, app) => {
+        if (app.payment && app.payment.status === "Completed") {
+          return sum + (app.price || 0);
+        }
+        return sum;
+      }, 0);
       
       setDashboardData(prev => ({
         ...prev,
@@ -137,45 +79,89 @@ const AdminDashboard = () => {
       }));
       
       const filteredRequests = result.filter(app => 
-        app && !app.isBooking && app.paymentMethod === "Cash"
+        app && app.approvedByAdmin === ""
       );
       setAppointmentRequests(filteredRequests);
+      
     } catch (err) {
       console.error("Error fetching appointments:", err);
       setError(err.message);
+      toast.error(`Failed to load appointments: ${err.message}`);
     }
-  };
+  }, []);
 
-  const handleRejection = async (appointmentId) => {
+  useEffect(() => {
+    fetchDashboardData();
+    fetchAppointments();
+  }, []);
+
+  const handleApproval = async (appointmentId) => {
     try {
+      setProcessingId(appointmentId);
       setConfirmDialog({ show: false, action: null, id: null });
-  
-      const response = await fetch(`${baseUrl}appointments/reject/${appointmentId}`, {
-        method: 'DELETE',
+
+      const response = await fetch(`${baseUrl}payment/offline/approve`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ appointmentId }),
       });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
   
       const result = await response.json();
       
-      if (result.message === "Appointment deleted successfully") {
-        setAppointmentRequests(prevRequests => 
-          prevRequests.filter(app => app._id !== appointmentId)
-        );
-        fetchAppointments();
-      } else {
+      if (!response.ok) {
+        throw new Error(result.message || "Failed to approve appointment");
+      }
+  
+      // Optimistic update
+      setAppointmentRequests(prev => prev.filter(app => app._id !== appointmentId));
+      
+      await fetchAppointments();
+      toast.success("Appointment approved successfully");
+      
+    } catch (err) {
+      console.error("Error approving appointment:", err);
+      setError(err.message);
+      toast.error(`Approval failed: ${err.message}`);
+      fetchAppointments();
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  
+  const handleRejection = async (appointmentId) => {
+    try {
+      setProcessingId(appointmentId);
+      setConfirmDialog({ show: false, action: null, id: null });
+
+      const response = await fetch(`${baseUrl}payment/offline/reject`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ appointmentId }),
+      });
+  
+      const result = await response.json();
+      
+      if (!response.ok) {
         throw new Error(result.message || "Failed to reject appointment");
       }
+  
+      // Optimistic update
+      setAppointmentRequests(prev => prev.filter(app => app._id !== appointmentId));
+      
+      await fetchAppointments();
+      toast.success("Appointment rejected successfully");
+      
     } catch (err) {
       console.error("Error rejecting appointment:", err);
       setError(err.message);
+      toast.error(`Rejection failed: ${err.message}`);
+      fetchAppointments();
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -203,6 +189,7 @@ const AdminDashboard = () => {
   const handleLogout = () => {     
     localStorage.removeItem("authToken");     
     navigate("/Admin/login");   
+    toast.info("Logged out successfully");  
   };    
 
   const formatDate = (dateString) => {
@@ -305,18 +292,20 @@ const AdminDashboard = () => {
                         <td className="p-2">Rs. {appointment.price || "0"}</td>
                         <td className="p-2">
                           <button 
-                            className="text-green-500 px-2 hover:text-green-700"
+                            className="text-green-500 px-2 hover:text-green-700 disabled:opacity-50"
                             onClick={() => showConfirmationDialog("approve", appointment._id)}
                             title="Approve"
+                            disabled={processingId === appointment._id}
                           >
-                            ✓
+                            {processingId === appointment._id ? '...' : '✓'}
                           </button>
                           <button 
-                            className="text-red-500 px-2 hover:text-red-700"
+                            className="text-red-500 px-2 hover:text-red-700 disabled:opacity-50"
                             onClick={() => showConfirmationDialog("reject", appointment._id)}
                             title="Reject"
+                            disabled={processingId === appointment._id}
                           >
-                            ×
+                            {processingId === appointment._id ? '...' : '×'}
                           </button>
                         </td>
                       </tr>
@@ -400,8 +389,10 @@ const AdminDashboard = () => {
                       ? "bg-green-500 hover:bg-green-600" 
                       : "bg-red-500 hover:bg-red-600"
                   }`}
+                  disabled={processingId === confirmDialog.id}
                 >
-                  {confirmDialog.action === "approve" ? "Approve" : "Reject"}
+                  {processingId === confirmDialog.id ? 'Processing...' : 
+                   confirmDialog.action === "approve" ? "Approve" : "Reject"}
                 </button>
               </div>
             </div>

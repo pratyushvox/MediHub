@@ -140,10 +140,12 @@ const generateTimeSlots = (availableTime, bookedTimes = []) => {
     ? doctors 
     : doctors.filter(doctor => doctor.specialty === selectedSpecialty);
 
-  const handleDoctorSelect = (doctor) => {
-    setBookedDoctorData(doctor);
-    setCurrentStep(2);
-  };
+  // In handleDoctorSelect function
+const handleDoctorSelect = (doctor) => {
+  setBookedDoctorData(doctor);
+  setBookedDoctor(doctor.id); // Add this line
+  setCurrentStep(2);
+};
   
   const handleContinueToStep3 = () => {
     if (appointmentDate && appointmentTime && appointmentType) {
@@ -166,12 +168,15 @@ const generateTimeSlots = (availableTime, bookedTimes = []) => {
 
   const handleBookAppointment = async (selectedPaymentMethod) => {
     try {
+      setPaymentMethod(selectedPaymentMethod);
+      setShowPaymentDialog(false);
+      
       // 1. First create the appointment
       const appointmentRes = await fetch("http://localhost:4000/api/appointments/createAppointment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}` // Add auth header
+          Authorization: `Bearer ${localStorage.getItem("token")}`
         },
         body: JSON.stringify({
           bookedPatient,
@@ -184,64 +189,87 @@ const generateTimeSlots = (availableTime, bookedTimes = []) => {
           price,
         }),
       });
-  
+      
       const appointmentData = await appointmentRes.json();
-  
+      
       if (!appointmentRes.ok) {
         throw new Error(appointmentData.message || "Failed to create appointment");
       }
-  
-      // 2. Handle payment based on method
+      
+      console.log("Appointment created successfully:", appointmentData);
+      
+      // 2. Handle Khalti payment
       if (selectedPaymentMethod === "Khalti") {
-        // Initiate Khalti payment
-        const paymentRes = await fetch("http://localhost:4000/api/payments/khalti/initiate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          },
-          body: JSON.stringify({ 
-            appointmentId: appointmentData._id // Use the created appointment ID
-          }),
-        });
-  
-        const paymentData = await paymentRes.json();
-  
-        if (paymentData.payment_url) {
-          window.location.href = paymentData.payment_url;
-        } else {
-          throw new Error("Failed to initiate Khalti payment");
+        try {
+          // Increased delay to ensure the appointment is saved in the database
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Store appointment ID in a variable to ensure it's correctly passed
+          const appointmentId = appointmentData.appointment._id || appointmentData._id;
+          
+          if (!appointmentId) {
+            throw new Error("No appointment ID received from server");
+          }
+          
+          console.log("Initiating payment for appointment ID:", appointmentId);
+          
+          const paymentRes = await fetch("http://localhost:4000/api/payment/khalti/initiate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            },
+            body: JSON.stringify({
+              appointmentId: appointmentId,
+              // Include additional appointment info as fallback
+              appointmentDetails: {
+                patient: bookedPatient,
+                doctor: bookedDoctor,
+                date: appointmentDate,
+                time: appointmentTime,
+                price: price
+              }
+            }),
+          });
+          
+          // Check if request failed and handle the error
+          if (!paymentRes.ok) {
+            const paymentError = await paymentRes.json();
+            console.error("Payment initiation response:", paymentError);
+            throw new Error(paymentError.message || "Payment initiation failed");
+          }
+          
+          const paymentData = await paymentRes.json();
+          console.log("Payment initiated successfully:", paymentData);
+          
+          if (paymentData.payment_url) {
+            // Redirect to Khalti payment page
+            window.location.href = paymentData.payment_url;
+          } else {
+            throw new Error("No payment URL received from Khalti");
+          }
+        } catch (paymentError) {
+          console.error("Payment processing error:", paymentError);
+          // Show more specific error to user
+          toast.error(`Payment processing failed: ${paymentError.message}`);
+          // Still allow them to continue to confirmation or retry
+          if (window.confirm("Payment processing failed. Would you like to try again or continue with offline payment?")) {
+            setPaymentMethod("Cash");
+            setCurrentStep(5);
+          } else {
+            setCurrentStep(3);
+          }
         }
       } else {
         // For offline payments
-        setCurrentStep(5); // Show confirmation
+        setCurrentStep(5);
       }
     } catch (error) {
       console.error("Booking error:", error);
-      toast.error(error.message);
-      // Optionally revert to step 3 to allow retry
+      toast.error(`Booking failed: ${error.message}`);
       setCurrentStep(3);
     }
   };
-
-  useEffect(() => {
-    // Handle payment callback from Khalti
-    const params = new URLSearchParams(window.location.search);
-    const paymentStatus = params.get('payment');
-    const appointmentId = params.get('appointmentId');
-  
-    if (paymentStatus === 'success') {
-      toast.success(`Payment successful! Appointment ID: ${appointmentId}`);
-      // Clear URL params
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setCurrentStep(4); // Show success screen
-    } else if (paymentStatus === 'failed') {
-      toast.error(`Payment failed: ${params.get('reason')}`);
-      window.history.replaceState({}, document.title, window.location.pathname);
-      setCurrentStep(3); // Return to booking form
-    }
-  }, []);
-
     
   
 
@@ -746,62 +774,8 @@ const generateTimeSlots = (availableTime, bookedTimes = []) => {
       </div>
     </div>
   );
-  const renderStep6 = () => (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-lg shadow-md p-6 text-center">
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        </div>
-        <h2 className="text-2xl font-semibold mb-2">Appointment Request Sent!</h2>
-        <p className="text-gray-600 mb-4">Your appointment request has been sent to the clinic.</p>
-        <p className="text-gray-600 mb-6">Please pay the consultation fee when you visit the clinic.</p>
-        
-        {bookedDoctorData && (
-          <div className="max-w-sm mx-auto bg-blue-50 rounded-lg p-4 mb-6">
-            <div className="space-y-2">
-              <p className="font-medium">{bookedDoctorData.name}</p>
-              <div className="flex justify-between text-sm">
-                <span>Appointment Type:</span>
-                <span className="font-medium">{appointmentType}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Date & Time:</span>
-                <span className="font-medium">{appointmentDate} at {appointmentTime}</span>
-              </div>
-              {appointmentType === 'Physical Visit' && (
-                <div className="flex justify-between text-sm">
-                  <span>Location:</span>
-                  <span className="font-medium">{bookedDoctorData.location}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm">
-                <span>Fee to Pay:</span>
-                <span className="font-medium text-green-600">{bookedDoctorData.price}</span>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={() => setCurrentStep(1)}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Book Another
-          </button>
-          <button
-            className="px-6 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            View Appointments
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  
+   
 
   return (
     <div className="min-h-screen bg-gray-100">

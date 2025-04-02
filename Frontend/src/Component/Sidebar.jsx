@@ -21,8 +21,8 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
       { title: 'Dashboard', icon: Home, href: '/admin/admindashboard' },
       { title: 'Patient', icon: Calendar, href: '/admin/patientlist' },
       { title: 'Doctor', icon: FileText, href: '/admin/doctorlist' },
-      { title: 'Appointment', icon: MessageSquare, href: '/admin/consultation' },
-      { title: 'Invoices', icon: FileText, href: '/admin/invoices' },
+      { title: 'Appointment', icon: MessageSquare, href: '/admin/viewappointmentlist' },
+      { title: 'Invoices', icon: FileText, href: '/admin/paymentstatus' },
       { title: 'Inventory', icon: FileText, href: '/admin/invoices' },
     ],
     doctor: [
