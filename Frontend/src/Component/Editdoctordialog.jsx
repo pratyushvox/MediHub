@@ -35,7 +35,8 @@ const EditDoctorProfileDialog = ({ data, onClose, onSave }) => {
           </div>
           <div>
             <label className="text-gray-500 text-sm mb-1">Doctor ID</label>
-            <input type="text" value={editedUser._id} disabled className="border p-2 w-full rounded bg-gray-100" />
+            <input type="text" value={editedUser.doctorId
+} disabled className="border p-2 w-full rounded bg-gray-100" />
           </div>
           <div>
             <label className="text-gray-500 text-sm mb-1">Available Time</label>

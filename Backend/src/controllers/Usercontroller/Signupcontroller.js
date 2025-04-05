@@ -57,6 +57,7 @@ export const verifyOTP = async (req, res) => {
       token,  // Include the token in the response
       user: {
         id: newUser._id,
+        patientId: newUser.patientId, 
         email: newUser.email,
         name: newUser.name,
         phone: newUser.phone

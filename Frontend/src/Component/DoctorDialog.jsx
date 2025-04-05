@@ -40,7 +40,8 @@ const DoctorDialog = ({ user, onClose }) => {
               </div>
               <div>
                 <p className="text-gray-500 text-sm mb-1">DOCTOR ID</p>
-                <p className="font-bold">{user._id || 'N/A'}</p>
+                <p className="font-bold">{user.doctorId
+ || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-500 text-sm mb-1">Available Time</p>

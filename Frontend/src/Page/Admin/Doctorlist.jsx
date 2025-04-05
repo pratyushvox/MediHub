@@ -123,6 +123,7 @@ const DoctorList = () => {
   };
 
   const columns = [
+    { header: "Doctor ID", accessor: "doctorId"}, 
     { header: "Doctor Name", accessor: "name" },
     { header: "Contact No", accessor: "phone" },
     { header: "Specialist", accessor: "specialist" },

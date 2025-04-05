@@ -40,7 +40,7 @@ const PatientDialog = ({ user, onClose  }) => {
               </div>
               <div>
                 <p className="text-gray-500 text-sm mb-1">Patient ID</p>
-                <p className="font-bold">{user._id || 'N/A'}</p>
+                <p className="font-bold">{user.patientId || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-500 text-sm mb-1">DATE OF BIRTH</p>
@@ -97,7 +97,7 @@ const PatientDialog = ({ user, onClose  }) => {
                     </div>
                     <h3 className="text-lg font-medium text-yellow-600">Medical Conditions</h3>
                   </div>
-                  <p>{user?.personalinfo.medicalonditions || 'N/A'}</p>
+                  <p>{user?.personalinfo.medicalConditions || 'N/A'}</p>
                 </div>
               </div>
             </div>

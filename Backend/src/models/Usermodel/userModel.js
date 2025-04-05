@@ -18,8 +18,6 @@ const personalInfoSchema = new mongoose.Schema({
   allergies: { type: String, default: "None" }
 });
 
-
-
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -32,13 +30,18 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, 'Email is required'],
-      unique: true,  // This creates an index automatically
+      unique: true,
       lowercase: true,
       trim: true,
       match: [
         /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/,
         'Please enter a valid email address'
       ]
+    },
+    patientId: {
+      type: String,
+      unique: true,
+      index: true
     },
     phone: {
       type: String,
@@ -57,23 +60,20 @@ const userSchema = new mongoose.Schema(
     },
     otp: {
       type: String,
-      select: false // OTP won't be included in query results by default
+      select: false
     },
     otpExpiry: {
       type: Date,
-      select: false // OTP expiry won't be included in query results by default
+      select: false
     },
-    personalinfo:{
+    personalinfo: {
       type: personalInfoSchema,
-      default : null
-
-    }, 
+      default: null
+    },
     token: {
       type: String,
-    default: null
-  },
-
-
+      default: null
+    },
     loginAttempts: {
       type: Number,
       default: 0,
@@ -100,7 +100,28 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Index for phone (email index is already created by unique: true)
+// Patient ID generation middleware
+userSchema.pre('save', async function(next) {
+  if (this.isNew && !this.patientId) {
+    let isUnique = false;
+    let patientId;
+    
+    while (!isUnique) {
+      const randomNum = Math.floor(100000 + Math.random() * 900000);
+      patientId = `PAT-${randomNum}`;
+      
+      const existingUser = await this.constructor.findOne({ patientId });
+      if (!existingUser) {
+        isUnique = true;
+      }
+    }
+    
+    this.patientId = patientId;
+  }
+  next();
+});
+
+// Index for phone
 userSchema.index({ phone: 1 });
 
 // Hash password before saving
@@ -129,6 +150,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   console.log('Compare result:', result);
   return result;
 };
+
 // Method to check if user is locked out
 userSchema.methods.isLocked = function() {
   return this.lockUntil && this.lockUntil > Date.now();

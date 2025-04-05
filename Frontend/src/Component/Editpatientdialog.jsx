@@ -46,7 +46,7 @@ const   EditPatientDialog = ({ data, onClose, onSave }) => {
           </div>
           <div>
             <label className="text-gray-500 text-sm">Patient ID</label>
-            <input type="text" value={editedUser._id} disabled className="border p-2 w-full rounded-md bg-gray-100" />
+            <input type="text" value={editedUser.patientId} disabled className="border p-2 w-full rounded-md bg-gray-100" />
           </div>
           {/* <div>
             <label className="text-gray-500 text-sm">Date of Birth</label>

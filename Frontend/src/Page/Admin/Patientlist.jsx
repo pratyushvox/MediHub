@@ -34,7 +34,7 @@ const PatientList = () => {
 
   // Column definition for the patient table
   const columns = [
-  
+    { header: 'Patient ID', accessor: 'patientId' },
     { header: 'Patient Name', accessor: 'name' },
     { header: 'Contact No', accessor: 'phone' },
     { header: 'Reason', accessor: 'reason' },
@@ -46,6 +46,7 @@ const PatientList = () => {
     
     try {
       const updatedData = {
+        Id: patient?.patientId,
         name: patient?.name,
         phone: patient?.phone,
         // Flatten the personalinfo fields
