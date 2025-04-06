@@ -67,14 +67,14 @@ const AdminDashboard = () => {
       
       const totalIncome = result.reduce((sum, app) => {
         if (app.payment && app.payment.status === "Completed") {
-          return sum + (app.price || 0);
+          return sum + (parseFloat(app.price) || 0);
         }
         return sum;
       }, 0);
       
       setDashboardData(prev => ({
         ...prev,
-        totalIncome,
+        totalIncome: totalIncome || 0, // Ensure 0 if undefined/null
         totalAppointments: confirmed.length
       }));
       
@@ -83,12 +83,12 @@ const AdminDashboard = () => {
       );
       setAppointmentRequests(filteredRequests);
       
-    } catch (err) {
-      console.error("Error fetching appointments:", err);
-      setError(err.message);
-      toast.error(`Failed to load appointments: ${err.message}`);
-    }
-  }, []);
+   } catch (err) {
+    console.error("Error fetching appointments:", err);
+    setError(err.message);
+    toast.error(`Failed to load appointments: ${err.message}`);
+  }
+}, []);
 
   useEffect(() => {
     fetchDashboardData();

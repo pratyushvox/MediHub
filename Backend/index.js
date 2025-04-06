@@ -8,6 +8,7 @@ import Doctorroutes from "./src/routes/Doctor/Doctorroutes.js"
 import Displaydataroutes from "./src/routes/Displaydataroutes.js"
 import AppointmentRoutes from "./src/routes/Appointment/AppointmentRoutes.js"
 import Paymentroutes from "./src/routes/Paymentroutes/Paymentroutes.js"
+import labreportroutes from "./src/routes/Labreport/Labreportroutes.js"
 
 
 dotenv.config();
@@ -25,6 +26,7 @@ app.use('/api', Doctorroutes);
 app.use('/api', Displaydataroutes);
 app.use('/api', AppointmentRoutes);
 app.use('/api/Payment', Paymentroutes)
+app.use("/api", labreportroutes); 
 
 
 

@@ -20,6 +20,9 @@ import ViewAppointmentlist from './Page/Admin/Appointment';
 import PaymentStatusPage from './Page/Admin/Paymentstatus';
 import VerifyPayment from './Page/Patient/Verify';
 import SuccessPage from './Page/Patient/OnlinebookingSuccess';
+import Labreportstats from './Page/Patient/Labreport';
+import AdminLabReports from './Page/Admin/Labreport';
+import ClinicTestRequestForm from './Component/ClinicLabForm';
 
 function App() {
   return (
@@ -46,6 +49,10 @@ function App() {
         <Route path="/admin/paymentstatus" element={<PaymentStatusPage/>}/>
         <Route path="/payment/verify" element={<VerifyPayment/>}/>
         <Route path="/payment/sucess" element={<SuccessPage/>}/>
+        <Route path="/Patient/Labreport" element={<Labreportstats/>}/>
+        <Route path="/admin/Labreport" element={<AdminLabReports/>}/>
+        <Route path="/admin/Labform" element={<ClinicTestRequestForm/>}/>
+
 
 
 
