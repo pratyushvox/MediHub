@@ -7,6 +7,7 @@ import { updatePersonalInfo } from '../controllers/Usercontroller/Personalinfoco
 import { getUserDetails } from "../controllers/Usercontroller/UserDetailsController.js";
 import { getAllUsers } from '../controllers/Usercontroller/Usersdetails.js';
 import { updateUserDetailsController } from '../controllers/Usercontroller/Updateuserdetails.js';
+import { deletePatient } from '../controllers/Usercontroller/Deletepatientdetails.js';
 
 const router = express.Router();
 
@@ -37,6 +38,11 @@ router.get("/:userId", getUserDetails);
 
 //  updating the userdetails editig 
 router.put("/update-user-details/:userId", updateUserDetailsController)
+
+
+// deleting the user details 
+router.delete('/delete/:userId', deletePatient);
+
 
 
 
