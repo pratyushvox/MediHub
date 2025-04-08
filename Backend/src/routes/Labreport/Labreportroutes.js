@@ -2,13 +2,14 @@ import express from 'express';
 import {
   createTestRequest,
   getTestRequests,
+  
  
   
 } from '../../controllers/Labreport/Labreportappointmentcontroller.js';
 
 import {
     getAllLabResults,
-    getLabResult,
+    getLabResultsByPatientId,
     createLabResult,
     
   } from '../../controllers/Labreport/Labresultcontroller.js';
@@ -26,7 +27,8 @@ router.get('/labreport/getTestRequest', getTestRequests);
 
 router.post('/labresult/create', createLabResult);
 router.get('/labresult/getall', getAllLabResults);
-router.get('/labresult/:id', getLabResult);
+router.get("/patient/labresult/:patientId", getLabResultsByPatientId);
+
 
 
 export default router;

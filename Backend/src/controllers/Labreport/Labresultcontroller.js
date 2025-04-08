@@ -20,29 +20,33 @@ export const getAllLabResults = async (req, res) => {
   }
 };
 
-// Get single lab result
-export const getLabResult = async (req, res) => {
-  try {
-    const labResult = await LabResult.findById(req.params.id);
-    
-    if (!labResult) {
-      return res.status(404).json({
+// Get labresult by patient id 
+export const getLabResultsByPatientId = async (req, res) => {
+    try {
+      const { patientId } = req.params; // Extract patientId from URL
+  
+      // Find lab results for this patient only, sorted by date (newest first)
+      const labResults = await LabResult.find({ patientId }).sort({ date: -1 });
+  
+      if (labResults.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "No lab results found for this patient",
+        });
+      }
+  
+      res.status(200).json({
+        success: true,
+        count: labResults.length,
+        data: labResults,
+      });
+    } catch (error) {
+      res.status(500).json({
         success: false,
-        error: 'Lab result not found'
+        error: "Server Error",
       });
     }
-    
-    res.status(200).json({
-      success: true,
-      data: labResult
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Server Error'
-    });
-  }
-};
+  };
 
 // Create new lab result
 

@@ -26,6 +26,7 @@ const AdminDashboard = () => {
     message: ""
   });
   const [processingId, setProcessingId] = useState(null);
+  const [labReports, setLabReports] = useState([]);
 
   const fetchDashboardData = async () => {
     try {
@@ -53,6 +54,25 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchLabReports = async () => {
+    try {
+      const response = await fetch(`${baseUrl}labreport/getTestRequest`);
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setLabReports(result.data);
+      } else {
+        throw new Error("Failed to fetch lab reports");
+      }
+    } catch (err) {
+      console.error("Error fetching lab reports:", err);
+      setError(err.message);
+      toast.error(`Failed to load lab reports: ${err.message}`);
+    }
+  };
+
   const fetchAppointments = useCallback(async () => {
     try {
       const response = await fetch(`${baseUrl}appointments/getAppointment`);
@@ -65,16 +85,23 @@ const AdminDashboard = () => {
       const confirmed = result.filter(app => app.approvedByAdmin === "Accepted");
       setConfirmedAppointments(confirmed);
       
-      const totalIncome = result.reduce((sum, app) => {
+      // Calculate income from appointments
+      const appointmentIncome = result.reduce((sum, app) => {
         if (app.payment && app.payment.status === "Completed") {
           return sum + (parseFloat(app.price) || 0);
         }
         return sum;
       }, 0);
       
+      // Calculate income from lab reports
+      const labReportIncome = labReports.reduce((sum, report) => {
+        return sum + (parseFloat(report.price) || 0);
+      }, 0);
+      
+      // Set total income as sum of appointments and lab reports
       setDashboardData(prev => ({
         ...prev,
-        totalIncome: totalIncome || 0, // Ensure 0 if undefined/null
+        totalIncome: (appointmentIncome + labReportIncome) || 0,
         totalAppointments: confirmed.length
       }));
       
@@ -88,12 +115,16 @@ const AdminDashboard = () => {
     setError(err.message);
     toast.error(`Failed to load appointments: ${err.message}`);
   }
-}, []);
+}, [labReports]);
 
   useEffect(() => {
     fetchDashboardData();
-    fetchAppointments();
+    fetchLabReports();
   }, []);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments, labReports]);
 
   const handleApproval = async (appointmentId) => {
     try {
