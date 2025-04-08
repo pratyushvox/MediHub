@@ -3,8 +3,11 @@ import { FaUsers, FaUserMd, FaProcedures, FaMoneyBillWave } from "react-icons/fa
 import { useNavigate } from "react-router-dom"; 
 import Sidebar from "../../Component/Sidebar"; 
 import Box from "../../Component/Box"; 
+import AppointmentTrendsChart from "../../Component/Appointmenttrendchart";
+import RevenueAnalysisChart from "../../Component/RevenueAnalysisChart";
 import { baseUrl } from "../../Constant/Constant"; 
 import { toast } from "react-toastify";
+
 
 const AdminDashboard = () => {   
   const navigate = useNavigate();
@@ -27,6 +30,18 @@ const AdminDashboard = () => {
   });
   const [processingId, setProcessingId] = useState(null);
   const [labReports, setLabReports] = useState([]);
+
+
+  const isUpcomingOrToday = (dateString) => {
+    if (!dateString) return false;
+    const appointmentDate = new Date(dateString);
+    if (isNaN(appointmentDate.getTime())) return false;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+    
+    return appointmentDate >= today;
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -82,7 +97,10 @@ const AdminDashboard = () => {
       
       setAllAppointments(result);
       
-      const confirmed = result.filter(app => app.approvedByAdmin === "Accepted");
+      const confirmed = result.filter(app => app.approvedByAdmin === "Accepted" && 
+        isUpcomingOrToday(app.appointmentDate)
+      );
+
       setConfirmedAppointments(confirmed);
       
       // Calculate income from appointments
@@ -273,27 +291,22 @@ const AdminDashboard = () => {
                   
         {/* Placeholder for Charts */}
         <div className="grid grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-lg shadow-md h-64">
-            <div className="p-4 text-center text-gray-500">
-              Inventory Chart 1 Placeholder
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-md h-64">
-            <div className="p-4 text-center text-gray-500">
-              Inventory Chart 2 Placeholder
-            </div>
-          </div>
+          <AppointmentTrendsChart appointments={allAppointments} />
+          <RevenueAnalysisChart 
+            appointments={allAppointments} 
+            labReports={labReports} 
+          />
         </div>
         
         <div className="grid grid-cols-2 gap-6">
           {/* Appointment Request Table */}
-          <div className="bg-white rounded-lg shadow-md flex flex-col">
-            <div className="p-4 border-b font-bold text-[#0665A7]">
+          <div className="bg-white rounded-lg shadow-md flex flex-col h-[400px]">
+            <div className="p-4 border-b font-bold text-[#0665A7] sticky top-0 bg-white z-10">
               Appointment Request
             </div>
-            <div className="overflow-y-auto max-h-64">
+            <div className="overflow-y-auto flex-1">
               <table className="w-full">
-                <thead className="sticky top-0 bg-gray-100">
+                <thead className="sticky top-0 bg-gray-100 z-10">
                   <tr>
                     <th className="p-2 text-left">Patient</th>
                     <th className="p-2 text-left">Doctor</th>
@@ -354,50 +367,50 @@ const AdminDashboard = () => {
           </div>
 
           {/* Confirmed Appointments Table */}
-          <div className="bg-white rounded-lg shadow-md flex flex-col">
-            <div className="p-4 border-b font-bold text-[#0665A7]">
-              Confirmed Appointments
-            </div>
-            <div className="overflow-y-auto max-h-64">
-              <table className="w-full">
-                <thead className="sticky top-0 bg-gray-100">
-                  <tr>
-                    <th className="p-2 text-left">Patient</th>
-                    <th className="p-2 text-left">Doctor</th>
-                    <th className="p-2 text-left">Date/Time</th>
-                    <th className="p-2 text-left">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {confirmedAppointments.length > 0 ? (
-                    confirmedAppointments.map((appointment) => (
-                      <tr key={appointment._id} className="border-b hover:bg-gray-50">
-                        <td className="p-2">
-                          <div className="font-medium">{appointment.bookedPatient?.name || "Unknown"}</div>
-                          <div className="text-sm text-gray-500">{appointment.bookedPatient?.phone || "N/A"}</div>
-                        </td>
-                        <td className="p-2">
-                          <div className="font-medium">{appointment.bookedDoctor?.name || "Unknown"}</div>
-                          <div className="text-sm text-gray-500">{appointment.bookedDoctor?.specialist || "N/A"}</div>
-                        </td>
-                        <td className="p-2">
-                          <div>{formatDate(appointment.appointmentDate)}</div>
-                          <div className="text-sm text-gray-500">{appointment.appointmentTime || "N/A"}</div>
-                        </td>
-                        <td className="p-2">Rs. {appointment.price || "0"}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="p-2 text-center text-gray-500">
-                        No confirmed appointments found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <div className="bg-white rounded-lg shadow-md flex flex-col h-[400px]">
+          <div className="p-4 border-b font-bold text-[#0665A7] sticky top-0 bg-white z-10">
+            Upcoming Confirmed Appointments
           </div>
+          <div className="overflow-y-auto flex-1">
+            <table className="w-full">
+              <thead className="sticky top-0 bg-gray-100 z-10">
+                <tr>
+                  <th className="p-2 text-left">Patient</th>
+                  <th className="p-2 text-left">Doctor</th>
+                  <th className="p-2 text-left">Date/Time</th>
+                  <th className="p-2 text-left">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {confirmedAppointments.length > 0 ? (
+                  confirmedAppointments.map((appointment) => (
+                    <tr key={appointment._id} className="border-b hover:bg-gray-50">
+                      <td className="p-2">
+                        <div className="font-medium">{appointment.bookedPatient?.name || "Unknown"}</div>
+                        <div className="text-sm text-gray-500">{appointment.bookedPatient?.phone || "N/A"}</div>
+                      </td>
+                      <td className="p-2">
+                        <div className="font-medium">{appointment.bookedDoctor?.name || "Unknown"}</div>
+                        <div className="text-sm text-gray-500">{appointment.bookedDoctor?.specialist || "N/A"}</div>
+                      </td>
+                      <td className="p-2">
+                        <div>{formatDate(appointment.appointmentDate)}</div>
+                        <div className="text-sm text-gray-500">{appointment.appointmentTime || "N/A"}</div>
+                      </td>
+                      <td className="p-2">Rs. {appointment.price || "0"}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="p-2 text-center text-gray-500">
+                      No upcoming confirmed appointments found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
         </div>
 
         {/* Confirmation Dialog */}
