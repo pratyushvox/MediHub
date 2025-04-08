@@ -27,13 +27,16 @@ const PaymentStatusPage = () => {
         
         // Fetch appointments
         const appointmentsResponse = await fetch(`${baseUrl}appointments/getAppointment`);
+
         if (!appointmentsResponse.ok) {
           throw new Error('Failed to fetch appointments');
         }
         const appointmentsData = await appointmentsResponse.json();
-        setAppointments(appointmentsData);
-        setFilteredAppointments(appointmentsData);
-        
+        const approvedAppointments = appointmentsData.filter(
+          app => app.approvedByAdmin === "Accepted"
+        );
+        setAppointments(approvedAppointments);
+        setFilteredAppointments(approvedAppointments);
         // Fetch lab reports
         const labReportsResponse = await fetch(`${baseUrl}labreport/getTestRequest`);
         if (!labReportsResponse.ok) {
@@ -56,7 +59,9 @@ const PaymentStatusPage = () => {
 
   useEffect(() => {
     // Filter appointments
-    let appointmentResults = appointments;
+    let appointmentResults = appointments.filter(
+      app => app.approvedByAdmin === "Accepted"
+    );
     if (statusFilter !== 'All') {
       appointmentResults = appointmentResults.filter(app => app.payment.status === statusFilter);
     }
