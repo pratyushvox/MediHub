@@ -23,6 +23,7 @@ import SuccessPage from './Page/Patient/OnlinebookingSuccess';
 import Labreportstats from './Page/Patient/Labreport';
 import AdminLabReports from './Page/Admin/Labreport';
 import ClinicTestRequestForm from './Component/ClinicLabForm';
+import  AppointmentsTable from './Page/Doctor/Appointment'
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
         <Route path="/Patient/Labreport" element={<Labreportstats/>}/>
         <Route path="/admin/Labreport" element={<AdminLabReports/>}/>
         <Route path="/admin/Labform" element={<ClinicTestRequestForm/>}/>
+        <Route path="/doctor/viewappointment" element={<AppointmentsTable/>}/>
 
 
 

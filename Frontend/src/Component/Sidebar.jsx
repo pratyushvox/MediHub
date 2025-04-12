@@ -29,7 +29,7 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
     ],
     doctor: [
       { title: 'Dashboard', icon: Home, href: '/doctor' },
-      { title: 'Appointments', icon: Calendar, href: '/doctor/appointments' },
+      { title: 'Appointments', icon: Calendar, href: '/doctor/viewappointment'  },
       { title: 'Message', icon: MessageCircle, href: '/doctor/prescriptions' },
       { title: 'Online consulation', icon: Video, href: '/doctor/prescriptions' },
       
