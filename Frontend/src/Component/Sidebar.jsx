@@ -9,6 +9,8 @@ import {
   MessageSquare ,
   FilePlus, 
   Folder, 
+  MessageCircle,
+  Video,
    
   Clipboard, 
   FlaskConical,
@@ -28,9 +30,9 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
     doctor: [
       { title: 'Dashboard', icon: Home, href: '/doctor' },
       { title: 'Appointments', icon: Calendar, href: '/doctor/appointments' },
-      { title: 'Prescriptions', icon: FileText, href: '/doctor/prescriptions' },
-      { title: 'Consultation', icon: MessageSquare, href: '/doctor/consultation' },
-      { title: 'Invoices', icon: FileText, href: '/doctor/invoices' },
+      { title: 'Message', icon: MessageCircle, href: '/doctor/prescriptions' },
+      { title: 'Online consulation', icon: Video, href: '/doctor/prescriptions' },
+      
     ],
     patient: [
       { title: 'Dashboard', icon: Home, href: '/pdashboard' },  
@@ -38,7 +40,7 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
       { title: 'Book Appointment', icon: FilePlus, href: '/patient/BookAppointment' },  
       { title: 'Documents', icon: Folder, href: '/Patient/Documentlist' },  
       { title: 'Messages', icon: MessageSquare, href: '/patient/invoices' },  
-      { title: 'Prescriptions', icon: Clipboard, href: '/patient/invoices' },  
+      
       { title: 'Lab Report', icon: FlaskConical, href: '/Patient/Labreport' },  
     ],
   };

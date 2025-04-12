@@ -11,7 +11,8 @@ const ReusableTable = ({
   striped = true,
   hoverable = true,
   bordered = true,
-  onClick
+  onClick,
+  renderActions
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -40,37 +41,44 @@ const ReusableTable = ({
             <tr 
               key={rowIndex} 
               className={`
-                cursor-pointer
                 ${striped && rowIndex % 2 === 1 ? 'bg-gray-50' : ''}
                 ${hoverable ? 'hover:bg-gray-100' : ''}
                 ${bordered ? 'border-b border-gray-200' : ''}
               `}
+              onClick={() => onClick && onClick(row)}
             >
               {columns.map((column, colIndex) => (
-                <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {row[column.accessor]}
+                <td 
+                  key={colIndex} 
+                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                >
+                  {column.renderCell ? row[column.accessor] : row[column.accessor]}
                 </td>
               ))}
               {showActions && (
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex space-x-4 justify-end">
-                  <button 
-                    onClick={() => onClick && onClick(row)}
-                    className="text-blue-600 hover:text-blue-900"
-                  >
-                    <Eye size={16} />
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onEdit && onEdit(row); }} 
-                    className="text-indigo-600 hover:text-indigo-900"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onDelete && onDelete(row); }} 
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {renderActions ? renderActions(row) : (
+                    <>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onClick && onClick(row); }} 
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onEdit && onEdit(row); }} 
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); onDelete && onDelete(row); }} 
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </>
+                  )}
                 </td>
               )}
             </tr>

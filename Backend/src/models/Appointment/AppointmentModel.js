@@ -1,23 +1,24 @@
 import mongoose from "mongoose";
 import User from "../../models/Usermodel/userModel.js";
 import Doctor from "../../models/Doctor/Doctorsignupmodel.js";
-import Payment from "../../models/Paymentmodel/Paymentmodel.js"; // Import the Payment model
+import Payment from "../../models/Paymentmodel/Paymentmodel.js";
+
 
 const appointmentSchema = new mongoose.Schema(
     {
         bookedPatient: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "User", // Reference to User model
+            ref: "User",
             required: true
         },
         bookedDoctor: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Doctor", // Reference to Doctor model
+            ref: "Doctor",
             required: true
         },
         payment: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "Payment", // Reference to Payment model
+            ref: "Payment",
             required: false
         },
         appointmentType: { 
@@ -38,19 +39,28 @@ const appointmentSchema = new mongoose.Schema(
         },
         isBooking: { 
             type: Boolean, 
-            default: false // Default false (only true after online payment or admin approval)
+            default: false
         },
         price: { 
             type: Number, 
             required: true 
         },
         khaltiPid: {
-            type: String, // Stores Khalti transaction ID for online payments
+            type: String,
             default: null
         },
         approvedByAdmin: {
             type: String,
-            enum: ["Accepted", "Rejected", ""], // Empty by default, updated later
+            enum: ["Accepted", "Rejected", ""],
+            default: ""
+        },
+        consultationStatus: {
+            type: String,
+            enum: ["pending", "completed", "cancelled"],
+            default: "pending"
+        },
+        consultationNotes: {
+            type: String,
             default: ""
         }
     },
