@@ -28,7 +28,7 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
       { title: 'Lab Results',  icon: FlaskConical, href: '/admin/Labreport' },
     ],
     doctor: [
-      { title: 'Dashboard', icon: Home, href: '/doctor' },
+      { title: 'Dashboard', icon: Home, href: '/doctor/dashboard' },
       { title: 'Appointments', icon: Calendar, href: '/doctor/viewappointment'  },
       { title: 'Message', icon: MessageCircle, href: '/doctor/prescriptions' },
       { title: 'Online consulation', icon: Video, href: '/doctor/prescriptions' },

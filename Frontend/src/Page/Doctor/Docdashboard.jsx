@@ -174,6 +174,15 @@ function Doctordash() {
     setNotes(appointment.consultationNotes || '');
   };
 
+  // New function to navigate to patient details
+  const navigateToPatientDetails = (patientId) => {
+    if (patientId) {
+      navigate(`/doctor/patient/${patientId}`);
+    } else {
+      toast.error("Patient ID not available");
+    }
+  };
+
   // Status icon component
   const StatusIcon = ({ status }) => {
     switch (status) {
@@ -375,7 +384,15 @@ function Doctordash() {
                           className="w-10 h-10 rounded-full"
                         />
                         <div>
-                          <p className="text-sm font-medium text-gray-800">{appointment.bookedPatient.name}</p>
+                          <p 
+                            className="text-sm font-medium text-gray-800 hover:text-teal-600 hover:underline"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent triggering the parent onClick
+                              navigateToPatientDetails(appointment.bookedPatient._id);
+                            }}
+                          >
+                            {appointment.bookedPatient.name}
+                          </p>
                           <p className="text-xs text-gray-500">{appointment.appointmentReason}</p>
                         </div>
                       </div>
@@ -427,7 +444,12 @@ function Doctordash() {
                       className="w-10 h-10 rounded-full"
                     />
                     <div>
-                      <p className="text-sm font-medium">{selectedAppointment.bookedPatient.name}</p>
+                      <p 
+                        className="text-sm font-medium hover:text-teal-600 hover:underline cursor-pointer"
+                        onClick={() => navigateToPatientDetails(selectedAppointment.bookedPatient._id)}
+                      >
+                        {selectedAppointment.bookedPatient.name}
+                      </p>
                       <p className="text-xs text-gray-500">{selectedAppointment.appointmentType}</p>
                     </div>
                   </div>
