@@ -9,6 +9,8 @@ import Displaydataroutes from "./src/routes/Displaydataroutes.js"
 import AppointmentRoutes from "./src/routes/Appointment/AppointmentRoutes.js"
 import Paymentroutes from "./src/routes/Paymentroutes/Paymentroutes.js"
 import labreportroutes from "./src/routes/Labreport/Labreportroutes.js"
+import Reviewandcommentroutes from "./src/routes/Reviewandcommentroutes/Reviewandcommentroutes.js"
+import Fileuploadroutes from "./src/routes/Fileupload/Fileuploadroutes.js"
 
 
 dotenv.config();
@@ -27,6 +29,8 @@ app.use('/api', Displaydataroutes);
 app.use('/api', AppointmentRoutes);
 app.use('/api/Payment', Paymentroutes)
 app.use("/api", labreportroutes); 
+app.use("/api/reviews",Reviewandcommentroutes );
+app.use('/api/files',Fileuploadroutes);
 
 
 

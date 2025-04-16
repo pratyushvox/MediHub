@@ -1,7 +1,7 @@
 import React from 'react';
 import { FileText, Download, Share2, Trash2 } from 'lucide-react';
 
-export function Documentcard({ title, type, owner, email, date }) {
+export function Documentcard({ title, type, owner, email, date, onDownload, onDelete }) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="h-48 bg-blue-50 flex items-center justify-center">
@@ -25,20 +25,23 @@ export function Documentcard({ title, type, owner, email, date }) {
           </div>
           <div className="ml-2">
             <p className="text-sm font-medium text-gray-900">{owner}</p>
-            <p className="text-xs text-gray-500">{email}</p>
+            <p className="text-xs text-gray-500">ID: {email}</p> {/* Changed from email to display user ID */}
           </div>
         </div>
-
+        
         <div className="mt-4 flex items-center justify-between">
           <span className="text-sm text-gray-500">{date}</span>
           <div className="flex space-x-2">
-            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+            <button 
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              onClick={onDownload}
+            >
               <Download className="w-4 h-4 text-gray-600" />
             </button>
-            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-              <Share2 className="w-4 h-4 text-gray-600" />
-            </button>
-            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+            <button 
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              onClick={onDelete}
+            >
               <Trash2 className="w-4 h-4 text-gray-600" />
             </button>
           </div>
