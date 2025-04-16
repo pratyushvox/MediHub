@@ -66,9 +66,7 @@ function DoctorProfile({ onClose }) {
               </svg>
             </div>
             <h2 className="text-lg font-medium">Doctor Card</h2>
-            <div className="ml-auto">
-              <X className="w-5 h-5 text-gray-400" />
-            </div>
+            
           </div>
 
           {/* Basic Doctor Information */}
