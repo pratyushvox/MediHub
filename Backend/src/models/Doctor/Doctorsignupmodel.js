@@ -23,7 +23,17 @@ const doctorSchema = new mongoose.Schema({
       date: { type: String, required: true },
       time: { type: String, required: true },
     },
+    
+
   ],
+  averageRating: {
+    type: Number,
+    default: 0,
+  },
+  numberOfReviews: {
+    type: Number,
+    default: 0,
+  },
   verified: { type: Boolean, default: false } // Add this if not present
 });
 

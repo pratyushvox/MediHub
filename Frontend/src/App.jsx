@@ -24,6 +24,9 @@ import Labreportstats from './Page/Patient/Labreport';
 import AdminLabReports from './Page/Admin/Labreport';
 import ClinicTestRequestForm from './Component/ClinicLabForm';
 import  AppointmentsTable from './Page/Doctor/Appointment'
+import Patientprofiledoctor from './Page/Doctor/Patientprofileview';
+import Doctordash from './Page/Doctor/Docdashboard';
+import Doctorprofilenadreview from './Page/Patient/DoctorProfileView';
 
 function App() {
   return (
@@ -54,6 +57,14 @@ function App() {
         <Route path="/admin/Labreport" element={<AdminLabReports/>}/>
         <Route path="/admin/Labform" element={<ClinicTestRequestForm/>}/>
         <Route path="/doctor/viewappointment" element={<AppointmentsTable/>}/>
+        <Route path="/doctor/patient/:id" element={<Patientprofiledoctor/>}/>
+        <Route path="/Patient/Doctor/:id" element={<Doctorprofilenadreview/>}/> 
+        
+        
+        
+
+
+
 
 
 

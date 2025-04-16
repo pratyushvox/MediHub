@@ -3,9 +3,11 @@ import { Star, Clock, Calendar, ChevronRight, Clock3, DollarSign, MapPin, Video,
 import Sidebar from '../../Component/Sidebar';
 import PatientNavbar from '../../Component/Patientnavbar';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 
 function BookAppointment() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedSpecialty, setSelectedSpecialty] = useState('All Doctors');
   const [bookedPatient, setBookedPaitent] = useState(null);
@@ -331,20 +333,24 @@ const handleDoctorSelect = (doctor) => {
             }
             className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <img
-                    src={doctor.image}
-                    alt={doctor.name}
-                    className="w-20 h-20 rounded-full object-cover"
-                  />
-                  <div>
-                    <h3 className="text-xl font-semibold">{doctor.name}</h3>
-                    <span className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
-                      {doctor.specialty}
-                    </span>
-                  </div>
-                </div>
-
+              <div className="flex items-center gap-4 mb-4">
+  <img
+    src={doctor.image}
+    alt={doctor.name}
+    className="w-20 h-20 rounded-full object-cover"
+  />
+  <div>
+    <h3 
+      className="text-xl font-semibold hover:text-blue-600 cursor-pointer"
+      onClick={() => navigate(`/Patient/Doctor/${doctor.id}`)}
+    >
+      {doctor.name}
+    </h3>
+    <span className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+      {doctor.specialty}
+    </span>
+  </div>
+</div>
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-1">
                     <Star className="w-5 h-5 text-yellow-400 fill-current" />
