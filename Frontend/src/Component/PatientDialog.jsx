@@ -29,9 +29,26 @@ const PatientDialog = ({ user, onClose  }) => {
           {/* Basic Patient Information */}
           <div className="p-6 flex">
             <div className="mr-6">
-              <div className="bg-purple-500 rounded-full w-24 h-24 flex items-center justify-center text-white text-3xl font-bold">
-                {user.name?.charAt(0) || 'P'}
-              </div>
+            <div className="mr-6">
+  {user.profilePic ? (
+    <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200">
+      <img
+        src={user.profilePic}
+        alt="Profile"
+        className="w-full h-full object-cover"
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = '/default-avatar.png';
+        }}
+      />
+    </div>
+  ) : (
+    <div className="bg-purple-500 rounded-full w-24 h-24 flex items-center justify-center text-white text-3xl font-bold uppercase">
+      {`${user?.name?.split(' ')[0]?.charAt(0) || ''}${user?.name?.split(' ')[1]?.charAt(0) || ''}`}
+    </div>
+  )}
+</div>
+
             </div>
             <div className="flex-1 grid grid-cols-2 gap-6">
               <div>

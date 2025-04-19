@@ -8,6 +8,9 @@ import { getUserDetails } from "../controllers/Usercontroller/UserDetailsControl
 import { getAllUsers } from '../controllers/Usercontroller/Usersdetails.js';
 import { updateUserDetailsController } from '../controllers/Usercontroller/Updateuserdetails.js';
 import { deletePatient } from '../controllers/Usercontroller/Deletepatientdetails.js';
+import upload from '../Cloudinary/Cloudinaryupload.js'; // Import the multer + cloudinary upload middleware
+import { uploadProfilePicture } from '../controllers/Usercontroller/Uploadprofilepicture.js'; // The controller to handle after upload
+
 
 const router = express.Router();
 
@@ -42,6 +45,11 @@ router.put("/update-user-details/:userId", updateUserDetailsController)
 
 // deleting the user details 
 router.delete('/delete/:userId', deletePatient);
+
+//uploading the picture
+
+router.post('/upload-profile/:userId', upload.single('image'), uploadProfilePicture);
+
 
 
 

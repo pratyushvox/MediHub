@@ -33,6 +33,7 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
       { title: 'Message', icon: MessageCircle, href: '/doctor/prescriptions' },
       { title: 'Online consulation', icon: Video, href: '/doctor/prescriptions' },
       
+      
     ],
     patient: [
       { title: 'Dashboard', icon: Home, href: '/pdashboard' },  

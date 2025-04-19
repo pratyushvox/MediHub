@@ -292,19 +292,19 @@ function Doctordash() {
                   )}
                 </div>
                 <button
-                  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
-                  onClick={openProfileModal}
-                >
-                  <img
-                    src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=50&h=50&fit=crop"
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div className="text-left hidden sm:block">
-                    <p className="text-sm font-medium text-gray-700">Dr. {doctorData?.name || 'User'}</p>
-                    <p className="text-xs text-gray-500">{doctorData?.specialist || 'Specialist'}</p>
-                  </div>
-                </button>
+  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+  onClick={openProfileModal}
+>
+  <img
+    src={doctorData?.profilePic || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=50&h=50&fit=crop"}
+    alt="Profile"
+    className="w-10 h-10 rounded-full"
+  />
+  <div className="text-left hidden sm:block">
+    <p className="text-sm font-medium text-gray-700">Dr. {doctorData?.name || 'User'}</p>
+    <p className="text-xs text-gray-500">{doctorData?.specialist || 'Specialist'}</p>
+  </div>
+</button>
               </div>
             </div>
           </div>
@@ -492,13 +492,7 @@ function Doctordash() {
                         placeholder="Add your consultation notes here..."
                       />
                       {/* Add a save button instead of using onBlur */}
-                      <button
-                        className="mt-2 px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 disabled:bg-gray-400"
-                        onClick={updateConsultationNotes}
-                        disabled={isUpdating || notes === selectedAppointment.consultationNotes}
-                      >
-                        Save Notes
-                      </button>
+                     
                     </div>
                     <div className="flex gap-3">
                       <button

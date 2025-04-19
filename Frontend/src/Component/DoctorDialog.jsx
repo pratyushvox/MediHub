@@ -1,8 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, ArrowRight } from 'lucide-react';
 
 const DoctorDialog = ({ user, onClose }) => {
-    
+  const [imageError, setImageError] = useState(false);
+
+  // Function to get initials from name
+  const getInitials = (name) => {
+    if (!name) return 'DR';
+    const names = name.split(' ');
+    let initials = names[0].substring(0, 1).toUpperCase();
+    if (names.length > 1) {
+      initials += names[names.length - 1].substring(0, 1).toUpperCase();
+    }
+    return initials;
+  };
+
+  // Handle image loading errors
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <div className="min-h-screen inset-0 absolute bg-gray-600 bg-opacity-30 backdrop-blur-[0.5px] p-6 flex justify-center">
       <div className="max-w-3xl w-full bg-white p-6 rounded-md">
@@ -29,9 +46,18 @@ const DoctorDialog = ({ user, onClose }) => {
           {/* Basic Doctor Information */}
           <div className="p-6 flex">
             <div className="mr-6">
-              <div className="bg-purple-500 rounded-full w-24 h-24 flex items-center justify-center text-white text-3xl font-bold">
-                {user.name?.charAt(0) || 'D'}
-              </div>
+              {user.profilePic && !imageError ? (
+                <img
+                  src={user.profilePic}
+                  alt={user.name}
+                  className="w-24 h-24 rounded-full object-cover"
+                  onError={handleImageError}
+                />
+              ) : (
+                <div className="bg-purple-500 rounded-full w-24 h-24 flex items-center justify-center text-white text-3xl font-bold">
+                  {getInitials(user.name)}
+                </div>
+              )}
             </div>
             <div className="flex-1 grid grid-cols-2 gap-6">
               <div>
@@ -40,8 +66,7 @@ const DoctorDialog = ({ user, onClose }) => {
               </div>
               <div>
                 <p className="text-gray-500 text-sm mb-1">DOCTOR ID</p>
-                <p className="font-bold">{user.doctorId
- || 'N/A'}</p>
+                <p className="font-bold">{user.doctorId || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-gray-500 text-sm mb-1">Available Time</p>

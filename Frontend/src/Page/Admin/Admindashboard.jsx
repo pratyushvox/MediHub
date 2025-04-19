@@ -56,7 +56,7 @@ const AdminDashboard = () => {
       
       if (result.success) {
         setDashboardData(result.data);
-        toast.success("Dashboard data loaded successfully");
+        console.log("Dashboard data loaded successfully");
       } else {
         throw new Error("Failed to fetch dashboard data");
       }

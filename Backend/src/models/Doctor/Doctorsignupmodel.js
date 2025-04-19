@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 // Define Doctor Schema
 const doctorSchema = new mongoose.Schema({
-  doctorId: {  // Add this new field
+  doctorId: {
     type: String,
     unique: true,
     index: true
@@ -18,13 +18,12 @@ const doctorSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   doctorToken: { type: String },
+  profilePic: { type: String, default: "" }, // New field added here
   bookedslots: [
     {
       date: { type: String, required: true },
       time: { type: String, required: true },
     },
-    
-
   ],
   averageRating: {
     type: Number,
@@ -34,25 +33,25 @@ const doctorSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  verified: { type: Boolean, default: false } // Add this if not present
+  verified: { type: Boolean, default: false }
 });
 
 // Add pre-save hook to generate doctorId
-doctorSchema.pre('save', async function(next) {
+doctorSchema.pre('save', async function (next) {
   if (this.isNew && !this.doctorId) {
     let isUnique = false;
     let doctorId;
-    
+
     while (!isUnique) {
       const randomNum = Math.floor(100000 + Math.random() * 900000);
       doctorId = `DOC-${randomNum}`;
-      
+
       const existingDoctor = await this.constructor.findOne({ doctorId });
       if (!existingDoctor) {
         isUnique = true;
       }
     }
-    
+
     this.doctorId = doctorId;
   }
   next();

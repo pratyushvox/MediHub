@@ -38,17 +38,15 @@ function BookAppointment() {
           id: doctor._id,
           name: doctor.name,
           specialty: doctor.specialist,
-          rating: 4.8, // Default rating since API doesn't provide this
-          reviews: Math.floor(Math.random() * 100) + 50, // Random reviews count since API doesn't provide this
+          rating: 4.8,
+          reviews: Math.floor(Math.random() * 100) + 50,
           experience: doctor.experience,
-          // Using placeholder image since API doesn't provide images
-          image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300',
+          image: doctor.profilePic || 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&q=80&w=300&h=300',
           availableTime: doctor.availableTime,
-          price: doctor.price , // Use price from backend or default if not available
-          location: doctor.location || 'Medical Center, Floor 3', // Add location for physical visits
+          price: doctor.price,
+          location: doctor.address || 'Medical Center, Floor 3',
           availableTypes: ['Physical Visit', 'Online Consultation'],
           bookedslots: doctor.bookedslots || []
-           // Both types of consultations
         }));
         
         setDoctors(formattedDoctors);
@@ -334,11 +332,11 @@ const handleDoctorSelect = (doctor) => {
             className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="p-6">
               <div className="flex items-center gap-4 mb-4">
-  <img
-    src={doctor.image}
-    alt={doctor.name}
-    className="w-20 h-20 rounded-full object-cover"
-  />
+              <img
+  src={doctor.image}
+  alt={doctor.name}
+  className="w-20 h-20 rounded-full object-cover"
+/>
   <div>
     <h3 
       className="text-xl font-semibold hover:text-blue-600 cursor-pointer"
@@ -410,11 +408,11 @@ const handleDoctorSelect = (doctor) => {
         
         {bookedDoctorData && (
           <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg mb-6">
-            <img
-              src={bookedDoctorData.image}
-              alt={bookedDoctorData.name}
-              className="w-16 h-16 rounded-full object-cover"
-            />
+           <img
+  src={bookedDoctorData.image}
+  alt={bookedDoctorData.name}
+  className="w-16 h-16 rounded-full object-cover"
+/>
             <div className="flex-1">
               <h3 className="text-lg font-semibold">{bookedDoctorData.name}</h3>
               <span className="text-gray-600">{bookedDoctorData.specialty}</span>
