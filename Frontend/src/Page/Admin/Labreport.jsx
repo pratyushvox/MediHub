@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from "../../Component/Sidebar";
 import { FileText, Download, Share2, Printer, ChevronDown, ChevronUp, Search, PlusCircle, User, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from "react-toastify";
 
 const AdminLabReports = () => {
   const navigate = useNavigate();
@@ -182,11 +183,31 @@ const AdminLabReports = () => {
     if (!validateForm()) {
       return;
     }
-
+  
     try {
       setIsLoading(true);
       setError(null);
       
+      // First fetch all users to find the matching patient
+      const usersResponse = await fetch('http://localhost:4000/api/users/users');
+      const usersData = await usersResponse.json();
+      
+      if (!usersResponse.ok) {
+        throw new Error('Failed to fetch users');
+      }
+  
+      // Find the patient with matching patientId (like "PAT-465424")
+      const patient = usersData.find(user => 
+        user.role === 'patient' && user.patientId === newReport.patientId
+      );
+  
+      if (!patient) {
+        throw new Error('Patient not found');
+      }
+  
+      const patientObjectId = patient._id; // The MongoDB ObjectId
+      
+      // Then create the lab report
       const response = await fetch('http://localhost:4000/api/labresult/create', {
         method: 'POST',
         headers: {
@@ -194,7 +215,8 @@ const AdminLabReports = () => {
         },
         body: JSON.stringify({
           ...newReport,
-          date: new Date(newReport.date)
+          date: new Date(newReport.date),
+          patientObjectId // Store the ObjectId in your lab report
         })
       });
       
@@ -203,6 +225,46 @@ const AdminLabReports = () => {
       }
       
       const data = await response.json();
+      
+      // Send notification to the patient
+      try {
+        const testName = newReport.testType || 'your medical test';
+        const resultStatus = newReport.reportStatus || 'completed';
+        
+        let message = `Your lab report for ${testName} has been created.`;
+        
+        if (resultStatus.toLowerCase() === 'normal') {
+          message += ' All results are normal.';
+        } else if (resultStatus.toLowerCase() === 'abnormal') {
+          message += ' Some results are abnormal. Please consult with your doctor.';
+        }
+        
+        // Send notification using the ObjectId
+        const notificationResponse = await fetch('http://localhost:4000/api/notifications/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            senderId: localStorage.getItem('adminId'),
+            recipient: {
+              id: patientObjectId, // Use the ObjectId here
+              role: 'patient'
+            },
+            message: message,
+            type: 'lab_result'
+          })
+        });
+  
+        if (!notificationResponse.ok) {
+          const errorData = await notificationResponse.json();
+          console.warn('Failed to send notification:', errorData.message);
+          toast.warn('Lab report created but failed to send notification');
+        }
+      } catch (notificationError) {
+        console.error('Error sending notification:', notificationError);
+        toast.warn('Lab report created but error sending notification');
+      }
       
       // Refresh the reports list
       const refreshResponse = await fetch('http://localhost:4000/api/labresult/getall');
@@ -232,13 +294,21 @@ const AdminLabReports = () => {
       });
       setFormErrors({});
       
+      toast.success('Lab report created successfully');
+      
     } catch (err) {
       setError(err.message || 'Failed to create lab report');
       console.error('Error creating lab report:', err);
+      toast.error(err.message || 'Failed to create lab report');
     } finally {
       setIsLoading(false);
     }
   };
+      
+      
+      
+      // Refresh the reports list
+      
 
   if (isFetching) {
     return (

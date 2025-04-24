@@ -97,7 +97,8 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
       select: false
-    }
+    },
+    role: { type: String, default: 'patient' },
   },
   {
     timestamps: true

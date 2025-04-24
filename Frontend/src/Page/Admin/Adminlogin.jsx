@@ -53,6 +53,8 @@ const AdminLogin = () => {
 
         if (data && data.token) {
           localStorage.setItem("authToken", data.token);
+          localStorage.setItem("adminId", data.admin.id);
+          
 
           toast.success("Logged in successfully!");
           setFormData({ email: "", password: "" });

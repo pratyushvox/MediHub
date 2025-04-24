@@ -7,6 +7,8 @@ import AppointmentTrendsChart from "../../Component/Appointmenttrendchart";
 import RevenueAnalysisChart from "../../Component/RevenueAnalysisChart";
 import { baseUrl } from "../../Constant/Constant"; 
 import { toast } from "react-toastify";
+import axios from 'axios'
+
 
 
 const AdminDashboard = () => {   
@@ -30,6 +32,8 @@ const AdminDashboard = () => {
   });
   const [processingId, setProcessingId] = useState(null);
   const [labReports, setLabReports] = useState([]);
+  const adminId = localStorage.getItem('adminId');
+  console.log('adminniddd', adminId)
 
 
   const isUpcomingOrToday = (dateString) => {
@@ -143,24 +147,40 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchAppointments();
   }, [fetchAppointments, labReports]);
+const handleApproval = async (appointmentId) => {
+  try {
+    setProcessingId(appointmentId);
+    setConfirmDialog({ show: false, action: null, id: null });
 
-  const handleApproval = async (appointmentId) => {
-    try {
-      setProcessingId(appointmentId);
-      setConfirmDialog({ show: false, action: null, id: null });
+    const response = await fetch(`${baseUrl}payment/offline/approve`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ appointmentId }),
+    });
 
-      const response = await fetch(`${baseUrl}payment/offline/approve`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ appointmentId }),
-      });
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.message || "Failed to approve appointment");
+    }
   
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.message || "Failed to approve appointment");
+      // Find the appointment to get patient details
+      const approvedAppointment = appointmentRequests.find(app => app._id === appointmentId);
+      const patientId = approvedAppointment?.bookedPatient?._id;
+
+      const doctorName = approvedAppointment?.bookedDoctor?.name || 'your doctor';
+      if (patientId) {
+        await axios.post(`${baseUrl}notifications/create`, {
+          senderId: adminId,
+          recipient: {
+            id: patientId,
+            role: 'patient',
+          },
+          message: `Your appointment with Dr. ${doctorName} on ${formatDate(approvedAppointment.appointmentDate)} at ${approvedAppointment.appointmentTime} has been approved.`,
+          type: 'appointment',
+        });
       }
   
       // Optimistic update
@@ -183,7 +203,7 @@ const AdminDashboard = () => {
     try {
       setProcessingId(appointmentId);
       setConfirmDialog({ show: false, action: null, id: null });
-
+  
       const response = await fetch(`${baseUrl}payment/offline/reject`, {
         method: 'PUT',
         headers: {
@@ -196,6 +216,30 @@ const AdminDashboard = () => {
       
       if (!response.ok) {
         throw new Error(result.message || "Failed to reject appointment");
+      }
+  
+      // Find the appointment to get patient details
+      const rejectedAppointment = appointmentRequests.find(app => app._id === appointmentId);
+      const doctorName = rejectedAppointment?.bookedDoctor?.name || 'your doctor';
+
+      
+      if (rejectedAppointment) {
+        // Send notification to patient
+        await fetch(`${baseUrl}notifications/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recipient: {
+                   id: rejectedAppointment.bookedPatient._id,
+                   role: 'patient'
+                 },
+                 message: `Your appointment with Dr. ${doctorName} on ${formatDate(rejectedAppointment.appointmentDate)} at ${rejectedAppointment.appointmentTime} has been rejected.`,
+                 
+                 type: 'appointment_rejected'
+          }),
+        });
       }
   
       // Optimistic update

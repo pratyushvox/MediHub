@@ -2,6 +2,7 @@
 
 import LabResult from '../../models/Labreport/Labresultmodel.js';
 import TestRequest from '../../models/Labreport/Labreportappointmentmodel.js';
+import { sendNotification } from '../../controllers/Notification/Notificationcontroller.js';
 
 // Get all lab results
 export const getAllLabResults = async (req, res) => {
@@ -57,11 +58,9 @@ export const createLabResult = async (req, res) => {
     const labResult = await LabResult.create(req.body);
     
     // Find the corresponding test request and update its status
-    // Assuming patientId and testType can be used to match the request
     const updatedRequest = await TestRequest.findOneAndUpdate(
       {
         patientId: req.body.patientId,
-        
         TestResult: 'Pending' // Only update if still pending
       },
       {
@@ -71,12 +70,27 @@ export const createLabResult = async (req, res) => {
       {
         new: true // Return the updated document
       }
-    );
-
+    ).populate('patientId');
+    
     if (!updatedRequest) {
       console.warn('No matching pending test request found for this lab result');
+    } else {
+      // Send notification to patient about lab result
+      const testName = labResult.testName || updatedRequest.testType || 'your medical test';
+      const resultStatus = labResult.resultStatus || 'completed';
+      
+      let message = `Your lab report for ${testName} has been created.`;
+      
+      if (resultStatus.toLowerCase() === 'normal') {
+        message += ' All results are normal.';
+      } else if (resultStatus.toLowerCase() === 'abnormal') {
+        message += ' Some results are abnormal. Please consult with your doctor.';
+      }
+      
+      // Send notification using the same pattern as in approval/rejection
+      await sendNotification(updatedRequest.patientId._id.toString(), message, 'patient');
     }
-
+    
     res.status(201).json({
       success: true,
       data: {

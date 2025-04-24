@@ -1,6 +1,9 @@
 import Appointment from "../../models/Appointment/AppointmentModel.js";
 import Payment from "../../models/Paymentmodel/Paymentmodel.js";
 import axios from "axios";
+import { sendNotification } from '../../controllers/Notification/Notificationcontroller.js'; // Import the notification function
+import mongoose from "mongoose"; 
+
 
 const KHALTI_SECRET_KEY = process.env.KHALTI_SECRET_KEY;
 const KHALTI_BASE_URL = process.env.KHALTI_BASE_URL;
@@ -312,99 +315,102 @@ export const verifyPayment = async (req, res) => {
   
 
 // Admin approval for offline payments
+const formatAppointmentDate = (date) => 
+  new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
 export const approveOfflinePayment = async (req, res) => {
-    try {
-      const { appointmentId } = req.body;
-  
-      // Update and fetch the appointment first
-      const appointment = await Appointment.findByIdAndUpdate(
-        appointmentId,
-        { 
-          isBooking: true,
-          approvedByAdmin: "Accepted",
-          
-          
-        },
-        { new: true }
-      );
-  
-      // Check if appointment exists
-      if (!appointment) {
-        return res.status(404).json({
-          success: false,
-          message: "Appointment not found"
-        });
-      }
-  
-      // Create the payment
-      const payment = await Payment.create({
-        appointment: appointmentId,
-        amount: appointment.price, // Now appointment is defined
-        method: "Cash",
-        status: "Pending"
-      });
-      await Appointment.findByIdAndUpdate(
-        appointmentId,
-        { payment: payment._id }, // Save the payment ID in the appointment
-        { new: true }
-      );
-  
-      res.json({ 
-        success: true,
-        appointment,
-        payment
-      });
-  
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: "Approval failed",
-        error: error.message
-      });
+  try {
+    const { appointmentId } = req.body;
+    if (!appointmentId) {
+      return res.status(400).json({ success: false, message: 'Appointment ID is required' });
     }
-  };
 
-  export const rejectOfflinePayment = async (req, res) => {
-    try {
-        const { appointmentId } = req.body;
+    // Update appointment
+    const appointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      { isBooking: true, approvedByAdmin: 'Accepted' },
+      { new: true }
+    )
+      .populate('bookedDoctor')
+      .populate('bookedPatient');
 
-        // Update and fetch the appointment first
-        const appointment = await Appointment.findByIdAndUpdate(
-            appointmentId,
-            { 
-                isBooking: false,
-                approvedByAdmin: "Rejected",
-            },
-            { new: true }
-        ).populate('bookedDoctor');
-
-        // Check if appointment exists
-        if (!appointment) {
-            return res.status(404).json({
-                success: false,
-                message: "Appointment not found"
-            });
-        }
-
-        // Remove the booked slot from doctor's schedule
-        if (appointment.bookedDoctor) {
-            const doctor = appointment.bookedDoctor;
-            doctor.bookedslots = doctor.bookedslots.filter(slot => 
-                !(slot.date === appointment.appointmentDate && slot.time === appointment.appointmentTime)
-            );
-            await doctor.save();
-        }
-
-        res.json({ 
-            success: true,
-            appointment,
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Approval failed",
-            error: error.message
-        });
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
+
+    // Create payment record
+    const payment = await Payment.create({
+      appointment: appointmentId,
+      amount: appointment.price,
+      method: 'Cash',
+      status: 'Pending'
+    });
+
+    // Link payment to appointment
+    appointment.payment = payment._id;
+    await appointment.save();
+
+    // Send notification to patient
+    const doctorName = appointment.bookedDoctor?.name || 'your doctor';
+    const message = `Your appointment with Dr. ${doctorName} on ${formatAppointmentDate(appointment.appointmentDate)} at ${appointment.appointmentTime} has been approved.`;
+    await sendNotification(appointment.bookedPatient._id.toString(), message, 'patient');
+
+    return res.json({ success: true, appointment, payment });
+  } catch (error) {
+    console.error('[Approval Error]', error);
+    return res.status(500).json({ success: false, message: 'Approval failed', error: error.message });
+  }
+};
+
+export const rejectOfflinePayment = async (req, res) => {
+  try {
+    const { appointmentId, rejectionReason } = req.body;
+    if (!appointmentId) {
+      return res.status(400).json({ success: false, message: 'Appointment ID is required' });
+    }
+
+    // Update appointment status
+    const appointment = await Appointment.findByIdAndUpdate(
+      appointmentId,
+      {
+        isBooking: false,
+        approvedByAdmin: 'Rejected',
+        rejectionReason: rejectionReason || 'No reason provided'
+      },
+      { new: true }
+    )
+      .populate('bookedDoctor')
+      .populate('bookedPatient');
+
+    if (!appointment) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+
+    // Remove the booked slot from doctor
+    if (appointment.bookedDoctor?.bookedslots) {
+      const doctor = appointment.bookedDoctor;
+      doctor.bookedslots = doctor.bookedslots.filter(
+        slot => {
+          const slotDate = new Date(slot.date);
+          const appointmentDate = new Date(appointment.appointmentDate);
+          return !(slotDate.toISOString() === appointmentDate.toISOString() && slot.time === appointment.appointmentTime);
+        }
+      );
+      
+      await doctor.save();
+    }
+
+    // Send notification to patient
+    const doctorName = appointment.bookedDoctor?.name || 'your doctor';
+    let message = `Your appointment with Dr. ${doctorName} on ${formatAppointmentDate(appointment.appointmentDate)} at ${appointment.appointmentTime} has been rejected.`;
+    if (rejectionReason) {
+      message += ` Reason: ${rejectionReason}`;
+    }
+    await sendNotification(appointment.bookedPatient._id.toString(), message, 'patient');
+
+    return res.json({ success: true, appointment });
+  } catch (error) {
+    console.error('[Rejection Error]', error);
+    return res.status(500).json({ success: false, message: 'Rejection failed', error: error.message });
+  }
 };

@@ -71,7 +71,12 @@ export const adminLogin = async (req, res) => {
     return res.status(200).json({
       message: "Login successful",
       token,
+      admin: {
+        id: admin._id,
+         // Optional: include name or other info
+      },
     });
+    
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ message: "Server error" });

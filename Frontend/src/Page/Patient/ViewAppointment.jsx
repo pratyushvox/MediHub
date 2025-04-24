@@ -133,9 +133,8 @@ const ViewAppointment = () => {
     const fetchAppointments = async () => {
       try {
         const response = await axios.get(`${baseUrl}appointments/getAppointment`);
-        
         const userAppointments = response.data.filter(
-          appointment => appointment.bookedPatient._id === userId
+          appointment => appointment.bookedPatient && appointment.bookedPatient._id === userId
         );
         
         const formattedAppointments = userAppointments.map(appointment => ({
