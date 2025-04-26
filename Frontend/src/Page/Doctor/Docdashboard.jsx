@@ -6,6 +6,7 @@ import Editdocprofile from '../Doctor/Editdocprofile';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../Component/Sidebar';
 import { toast } from "react-toastify";
+import DoctorNavbar from '../../Component/Docnavbar';
 
 function Doctordash() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -262,71 +263,9 @@ function Doctordash() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header with profile */}
-        <div className="bg-white shadow-sm">
-          <div className="px-8 py-4">
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold">Welcome Dr {doctorData?.name || 'User'}!</h1>
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <button
-                    className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
-                    onClick={toggleSettingsDropdown}
-                  >
-                    <Settings className="w-6 h-6 text-gray-600" />
-                  </button>
-                  {isSettingsOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
-                      <button
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={openEditProfileModal}
-                      >
-                        Edit Profile
-                      </button>
-                      <button
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={handleLogout}
-                      >
-                        Logout
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <button
-  className="flex items-center gap-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
-  onClick={openProfileModal}
->
-  <img
-    src={doctorData?.profilePic || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=50&h=50&fit=crop"}
-    alt="Profile"
-    className="w-10 h-10 rounded-full"
-  />
-  <div className="text-left hidden sm:block">
-    <p className="text-sm font-medium text-gray-700">Dr. {doctorData?.name || 'User'}</p>
-    <p className="text-xs text-gray-500">{doctorData?.specialist || 'Specialist'}</p>
-  </div>
-</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Modal for DoctorProfile */}
-        {isProfileOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white rounded-lg p-5 max-w-2xl">
-              <DoctorProfile onClose={closeProfileModal} />
-            </div>
-          </div>
-        )}
-
-        {/* Modal for EditProfile */}
-        {isEditProfileOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-            <div className="bg-white rounded-lg p-5 max-w-2xl">
-              <Editdocprofile onClose={closeEditProfileModal} />
-            </div>
-          </div>
-        )}
+        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Use the new DoctorNavbar component */}
+        <DoctorNavbar doctorData={doctorData} onRefresh={fetchData} />
 
         {/* Main content area */}
         <div className="flex-1 overflow-auto p-8">
@@ -527,6 +466,7 @@ function Doctordash() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

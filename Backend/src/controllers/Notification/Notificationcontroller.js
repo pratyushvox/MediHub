@@ -15,6 +15,8 @@ export const sendNotification = async (recipientId, message, role) => {
     }
   
     try {
+      console.log(`[Notification] Sending to recipient: ${recipientId}, role: ${role}`);
+      console.log(`[Notification] Message: ${message}`);
         const newNotification = new Notification({
             message: message.trim(),
             recipient: { id: recipientId, role },

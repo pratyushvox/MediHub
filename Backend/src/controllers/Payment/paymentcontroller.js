@@ -315,8 +315,9 @@ export const verifyPayment = async (req, res) => {
   
 
 // Admin approval for offline payments
-const formatAppointmentDate = (date) => 
-  new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+
+// …
 
 export const approveOfflinePayment = async (req, res) => {
   try {
@@ -325,7 +326,7 @@ export const approveOfflinePayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Appointment ID is required' });
     }
 
-    // Update appointment
+    // 1) Update appointment
     const appointment = await Appointment.findByIdAndUpdate(
       appointmentId,
       { isBooking: true, approvedByAdmin: 'Accepted' },
@@ -338,7 +339,7 @@ export const approveOfflinePayment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
 
-    // Create payment record
+    // 2) Create payment record
     const payment = await Payment.create({
       appointment: appointmentId,
       amount: appointment.price,
@@ -350,17 +351,37 @@ export const approveOfflinePayment = async (req, res) => {
     appointment.payment = payment._id;
     await appointment.save();
 
-    // Send notification to patient
-    const doctorName = appointment.bookedDoctor?.name || 'your doctor';
-    const message = `Your appointment with Dr. ${doctorName} on ${formatAppointmentDate(appointment.appointmentDate)} at ${appointment.appointmentTime} has been approved.`;
-    await sendNotification(appointment.bookedPatient._id.toString(), message, 'patient');
+    // Helper to format the date nicely
+    const formatAppointmentDate = (date) => 
+      new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
+    // 3a) Notify the patient
+    const doctorName  = appointment.bookedDoctor?.name  || 'your doctor';
+    const patientMsg  = `Your appointment with Dr. ${doctorName} on ${formatAppointmentDate(appointment.appointmentDate)} at ${appointment.appointmentTime} has been approved.`;
+    await sendNotification(
+      appointment.bookedPatient._id.toString(),
+      patientMsg,
+      'patient'
+    );
+
+    // 3b) Notify the doctor
+    const patientName = appointment.bookedPatient?.name || 'your patient';
+    const doctorMsg   = `Appointment with patient ${patientName} on ${formatAppointmentDate(appointment.appointmentDate)} at ${appointment.appointmentTime} has been approved by admin.`;
+    await sendNotification(
+      appointment.bookedDoctor._id.toString(),
+      doctorMsg,
+      'doctor'
+    );
+
+    // 4) Return success
     return res.json({ success: true, appointment, payment });
+
   } catch (error) {
     console.error('[Approval Error]', error);
     return res.status(500).json({ success: false, message: 'Approval failed', error: error.message });
   }
 };
+
 
 export const rejectOfflinePayment = async (req, res) => {
   try {
