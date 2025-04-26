@@ -104,11 +104,14 @@ const AdminDashboard = () => {
       
       setAllAppointments(result);
       
-      const confirmed = result.filter(app => app.approvedByAdmin === "Accepted" && 
+      // All confirmed appointments (regardless of date)
+      const confirmed = result.filter(app => app.approvedByAdmin === "Accepted");
+      setConfirmedAppointments(confirmed);
+  
+      // Upcoming confirmed appointments (for the table)
+      const upcomingConfirmed = confirmed.filter(app => 
         isUpcomingOrToday(app.appointmentDate)
       );
-
-      setConfirmedAppointments(confirmed);
       
       // Calculate income from appointments
       const appointmentIncome = result.reduce((sum, app) => {
@@ -127,7 +130,7 @@ const AdminDashboard = () => {
       setDashboardData(prev => ({
         ...prev,
         totalIncome: (appointmentIncome + labReportIncome) || 0,
-        totalAppointments: confirmed.length
+        totalAppointments: confirmed.length // This now shows ALL confirmed appointments
       }));
       
       const filteredRequests = result.filter(app => 
@@ -135,12 +138,12 @@ const AdminDashboard = () => {
       );
       setAppointmentRequests(filteredRequests);
       
-   } catch (err) {
-    console.error("Error fetching appointments:", err);
-    setError(err.message);
-    toast.error(`Failed to load appointments: ${err.message}`);
-  }
-}, [labReports]);
+    } catch (err) {
+      console.error("Error fetching appointments:", err);
+      setError(err.message);
+      toast.error(`Failed to load appointments: ${err.message}`);
+    }
+  }, [labReports]);
 
   useEffect(() => {
     fetchDashboardData();

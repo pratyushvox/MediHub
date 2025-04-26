@@ -384,6 +384,9 @@ export const approveOfflinePayment = async (req, res) => {
 
 
 export const rejectOfflinePayment = async (req, res) => {
+  const formatAppointmentDate = (date) => {
+    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
   try {
     const { appointmentId, rejectionReason } = req.body;
     if (!appointmentId) {

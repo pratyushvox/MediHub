@@ -19,6 +19,9 @@ const PaymentStatusPage = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
   const [viewMode, setViewMode] = useState('appointment'); // 'appointment' or 'labreport'
+  const [showIncomePopup, setShowIncomePopup] = useState(false);
+  const [weeklyIncome, setWeeklyIncome] = useState(0);
+  const [monthlyIncome, setMonthlyIncome] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,13 +40,13 @@ const PaymentStatusPage = () => {
         );
         setAppointments(approvedAppointments);
         setFilteredAppointments(approvedAppointments);
+        
         // Fetch lab reports
         const labReportsResponse = await fetch(`${baseUrl}labreport/getTestRequest`);
         if (!labReportsResponse.ok) {
           throw new Error('Failed to fetch lab reports');
         }
         const labReportsData = await labReportsResponse.json();
-        // Extract data array from the response
         setLabReports(labReportsData.data || []);
         setFilteredLabReports(labReportsData.data || []);
         
@@ -58,12 +61,65 @@ const PaymentStatusPage = () => {
   }, []);
 
   useEffect(() => {
+    // Calculate weekly and monthly income whenever appointments or labReports change
+    const calculateIncomeBreakdown = () => {
+      const now = new Date();
+      
+      // Weekly income (last 7 days)
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      const weeklyAppointmentsIncome = appointments
+        .filter(app => {
+          const appDate = new Date(app.appointmentDate);
+          return appDate >= oneWeekAgo && app.payment?.status === 'Completed';
+        })
+        .reduce((sum, app) => sum + (app.payment?.amount || 0), 0);
+      
+      const weeklyLabIncome = labReports
+        .filter(lab => {
+          const labDate = new Date(lab.createdAt);
+          return labDate >= oneWeekAgo && lab.TestResult === 'Done';
+        })
+        .reduce((sum, lab) => sum + (parseFloat(lab.price) || 0), 0);
+      
+      setWeeklyIncome(weeklyAppointmentsIncome + weeklyLabIncome);
+      
+      // Monthly income (current month)
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      const monthlyAppointmentsIncome = appointments
+        .filter(app => {
+          const appDate = new Date(app.appointmentDate);
+          return appDate.getMonth() === currentMonth && 
+                 appDate.getFullYear() === currentYear && 
+                 app.payment?.status === 'Completed';
+        })
+        .reduce((sum, app) => sum + (app.payment?.amount || 0), 0);
+      
+      const monthlyLabIncome = labReports
+        .filter(lab => {
+          const labDate = new Date(lab.createdAt);
+          return labDate.getMonth() === currentMonth && 
+                 labDate.getFullYear() === currentYear &&
+                 lab.TestResult === 'Done';
+        })
+        .reduce((sum, lab) => sum + (parseFloat(lab.price) || 0), 0);
+      
+      setMonthlyIncome(monthlyAppointmentsIncome + monthlyLabIncome);
+    };
+
+    calculateIncomeBreakdown();
+  }, [appointments, labReports]);
+
+  useEffect(() => {
     // Filter appointments
     let appointmentResults = appointments.filter(
       app => app.approvedByAdmin === "Accepted"
     );
     if (statusFilter !== 'All') {
-      appointmentResults = appointmentResults.filter(app => app.payment.status === statusFilter);
+      appointmentResults = appointmentResults.filter(app => app.payment?.status === statusFilter);
     }
     if (dateFilter) {
       appointmentResults = appointmentResults.filter(app => app.appointmentDate === dateFilter);
@@ -71,10 +127,10 @@ const PaymentStatusPage = () => {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       appointmentResults = appointmentResults.filter(app => 
-        app.bookedPatient.name.toLowerCase().includes(term) ||
-        app.bookedPatient.email.toLowerCase().includes(term) ||
-        app.bookedPatient.phone.includes(term) ||
-        app.bookedDoctor.name.toLowerCase().includes(term)
+        app.bookedPatient?.name?.toLowerCase().includes(term) ||
+        app.bookedPatient?.email?.toLowerCase().includes(term) ||
+        app.bookedPatient?.phone?.includes(term) ||
+        app.bookedDoctor?.name?.toLowerCase().includes(term)
       );
     }
     setFilteredAppointments(appointmentResults);
@@ -85,7 +141,6 @@ const PaymentStatusPage = () => {
       labResults = labResults.filter(lab => lab.TestResult === statusFilter);
     }
     if (dateFilter) {
-      // Format date to match API format
       labResults = labResults.filter(lab => {
         const labDate = new Date(lab.createdAt).toISOString().split('T')[0];
         return labDate === dateFilter;
@@ -106,7 +161,7 @@ const PaymentStatusPage = () => {
 
   const handleRowClick = (appointment) => {
     setSelectedAppointment(appointment);
-    setPaymentStatus(appointment.payment.status);
+    setPaymentStatus(appointment.payment?.status || '');
     setShowPaymentModal(true);
   };
 
@@ -153,11 +208,11 @@ const PaymentStatusPage = () => {
   };
 
   // Calculate statistics for appointments
-  const totalPendingAppointments = appointments.filter(app => app.payment.status === 'Pending').length;
-  const totalCompletedAppointments = appointments.filter(app => app.payment.status === 'Completed').length;
+  const totalPendingAppointments = appointments.filter(app => app.payment?.status === 'Pending').length;
+  const totalCompletedAppointments = appointments.filter(app => app.payment?.status === 'Completed').length;
   const appointmentIncome = appointments
-    .filter(app => app.payment.status === 'Completed')
-    .reduce((sum, app) => sum + app.payment.amount, 0);
+    .filter(app => app.payment?.status === 'Completed')
+    .reduce((sum, app) => sum + (app.payment?.amount || 0), 0);
 
   // Calculate statistics for lab reports
   const totalPendingLabReports = labReports.filter(lab => lab.TestResult === 'Pending').length;
@@ -207,8 +262,8 @@ const PaymentStatusPage = () => {
               icon={<FaMoneyBillWave />}
               count={`Rs. ${totalIncome.toFixed(2)}`}
               label="Total Income"
-              className="bg-blue-100 text-blue-800"
-              onClick={() => setStatusFilter('All')}
+              className="bg-blue-100 text-blue-800 cursor-pointer hover:bg-blue-200 transition-colors"
+              onClick={() => setShowIncomePopup(true)}
             />
           </div>
 
@@ -282,7 +337,6 @@ const PaymentStatusPage = () => {
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="overflow-x-auto">
               {viewMode === 'appointment' ? (
-                // Appointments Table
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -305,32 +359,32 @@ const PaymentStatusPage = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">{appointment.bookedPatient.name}</div>
-                                <div className="text-sm text-gray-500">{appointment.bookedPatient.phone}</div>
+                                <div className="text-sm font-medium text-gray-900">{appointment.bookedPatient?.name}</div>
+                                <div className="text-sm text-gray-500">{appointment.bookedPatient?.phone}</div>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{appointment.bookedDoctor.name}</div>
-                            <div className="text-sm text-gray-500">{appointment.bookedDoctor.specialist}</div>
+                            <div className="text-sm text-gray-900">{appointment.bookedDoctor?.name}</div>
+                            <div className="text-sm text-gray-500">{appointment.bookedDoctor?.specialist}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">{new Date(appointment.appointmentDate).toLocaleDateString()}</div>
                             <div className="text-sm text-gray-500">{appointment.appointmentTime}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            Rs. {appointment.payment.amount}
+                            Rs. {appointment.payment?.amount}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {appointment.payment.method}
+                            {appointment.payment?.method}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                              ${appointment.payment.status === 'Completed' ? 'bg-green-100 text-green-800' : 
-                                appointment.payment.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                appointment.payment.status === 'Failed' ? 'bg-red-100 text-red-800' : 
+                              ${appointment.payment?.status === 'Completed' ? 'bg-green-100 text-green-800' : 
+                                appointment.payment?.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                appointment.payment?.status === 'Failed' ? 'bg-red-100 text-red-800' : 
                                 'bg-gray-100 text-gray-800'}`}>
-                              {appointment.payment.status}
+                              {appointment.payment?.status}
                             </span>
                           </td>
                         </tr>
@@ -345,7 +399,6 @@ const PaymentStatusPage = () => {
                   </tbody>
                 </table>
               ) : (
-                // Lab Reports Table
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -416,8 +469,9 @@ const PaymentStatusPage = () => {
             </div>
           </div>
 
+          {/* Payment Status Update Modal */}
           {showPaymentModal && selectedAppointment && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-5">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-lg shadow-2xl w-full max-w-xl">
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
@@ -436,19 +490,19 @@ const PaymentStatusPage = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm text-gray-500">FULL NAME</p>
-                          <p>{selectedAppointment.bookedPatient.name}</p>
+                          <p>{selectedAppointment.bookedPatient?.name}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">DATE OF BIRTH</p>
-                          <p>{selectedAppointment.bookedPatient.personalinfo.dobAD}</p>
+                          <p>{selectedAppointment.bookedPatient?.personalinfo?.dobAD}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">PHONE</p>
-                          <p>{selectedAppointment.bookedPatient.phone}</p>
+                          <p>{selectedAppointment.bookedPatient?.phone}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">EMAIL</p>
-                          <p>{selectedAppointment.bookedPatient.email}</p>
+                          <p>{selectedAppointment.bookedPatient?.email}</p>
                         </div>
                       </div>
                     </div>
@@ -466,11 +520,11 @@ const PaymentStatusPage = () => {
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">AMOUNT</p>
-                          <p>Rs. {selectedAppointment.payment.amount}</p>
+                          <p>Rs. {selectedAppointment.payment?.amount}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">METHOD</p>
-                          <p>{selectedAppointment.payment.method}</p>
+                          <p>{selectedAppointment.payment?.method}</p>
                         </div>
                       </div>
                     </div>
@@ -506,6 +560,66 @@ const PaymentStatusPage = () => {
                         Update Status
                       </button>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Income Breakdown Popup */}
+          {showIncomePopup && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg shadow-2xl w-full max-w-md">
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h2 className="text-xl font-bold">Income Breakdown</h2>
+                    <button 
+                      onClick={() => setShowIncomePopup(false)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-lg mb-2">This Week</h3>
+                      <p className="text-2xl font-bold text-blue-700">
+                        Rs. {weeklyIncome.toFixed(2)}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Income from last 7 days
+                      </p>
+                    </div>
+                    
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-lg mb-2">This Month</h3>
+                      <p className="text-2xl font-bold text-green-700">
+                        Rs. {monthlyIncome.toFixed(2)}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Income for current month
+                      </p>
+                    </div>
+                    
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <h3 className="font-semibold text-lg mb-2">All Time</h3>
+                      <p className="text-2xl font-bold text-purple-700">
+                        Rs. {totalIncome.toFixed(2)}
+                      </p>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Total recorded income
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end pt-4">
+                    <button
+                      onClick={() => setShowIncomePopup(false)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    >
+                      Close
+                    </button>
                   </div>
                 </div>
               </div>
