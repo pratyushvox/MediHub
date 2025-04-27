@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import ReusableTable from '../../Component/Table';
 import Sidebar from '../../Component/Sidebar';
 import { baseUrl } from '../../Constant/Constant';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
+import EditAppointmentTimeBox from '../Admin/EditAppointmenttime';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import DeleteDialog from '../../Component/Deletedialog';
+
+
 
 const ViewAppointmentlist = () => {
   const [appointments, setAppointments] = useState([]);
@@ -11,6 +18,10 @@ const ViewAppointmentlist = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [currentAppointment, setCurrentAppointment] = useState(null);
+  const [appointmentToDelete, setAppointmentToDelete] = useState(null);
   const [filters, setFilters] = useState({
     status: 'All Statuses',
     payment: 'All Payments',
@@ -20,15 +31,12 @@ const ViewAppointmentlist = () => {
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const response = await fetch(`${baseUrl}appointments/getAppointment`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch appointments');
-        }
-        const data = await response.json();
-        setAppointments(data);
-        setFilteredData(data);
+        const response = await axios.get(`${baseUrl}appointments/getAppointment`);
+        setAppointments(response.data);
+        setFilteredData(response.data);
       } catch (err) {
         setError(err.message);
+        toast.error("Failed to fetch appointments");
       } finally {
         setLoading(false);
       }
@@ -37,9 +45,64 @@ const ViewAppointmentlist = () => {
     fetchAppointments();
   }, []);
 
+  const handleUpdateAppointment = async (updatedData) => {
+    try {
+      await axios.put(`${baseUrl}appointments/${updatedData._id}/time`, {
+        newAppointmentDate: updatedData.appointmentDate,
+        newAppointmentTime: updatedData.appointmentTime
+      });
+      
+      toast.success("Appointment time updated successfully!");
+      
+      const response = await axios.get(`${baseUrl}appointments/getAppointment`);
+      setAppointments(response.data);
+      setFilteredData(response.data);
+      closeModal();
+    } catch (error) {
+      console.error("Error updating appointment:", error.response?.data || error);
+      toast.error("Failed to update appointment: " + (error.response?.data?.message || error.message));
+    }
+  };
+
+  const openModal = (appointment) => {
+    setCurrentAppointment(appointment);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setCurrentAppointment(null);
+  };
+
+  const handleDelete = (row) => {
+    setAppointmentToDelete(row.originalData);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(`${baseUrl}appointments/delete/${appointmentToDelete._id}`);
+      toast.success("Appointment deleted successfully!");
+      
+      const response = await axios.get(`${baseUrl}appointments/getAppointment`);
+      setAppointments(response.data);
+      setFilteredData(response.data);
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+      toast.error("Failed to delete appointment: " + (error.response?.data?.message || error.message));
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setAppointmentToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteDialogOpen(false);
+    setAppointmentToDelete(null);
+  };
+
   useEffect(() => {
     const results = appointments.filter(appointment => {
-      // Search filter
       const matchesSearch = searchTerm === '' || 
         (appointment.bookedPatient?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         appointment.bookedDoctor?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,15 +110,12 @@ const ViewAppointmentlist = () => {
         appointment.approvedByAdmin?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         appointment.payment?.status?.toLowerCase().includes(searchTerm.toLowerCase()));
       
-      // Status filter
       const matchesStatus = filters.status === 'All Statuses' || 
         appointment.approvedByAdmin === filters.status;
       
-      // Payment filter
       const matchesPayment = filters.payment === 'All Payments' || 
         appointment.payment?.status === filters.payment;
       
-      // Date filter (simple implementation)
       const matchesDate = filters.date === '' || 
         appointment.appointmentDate?.includes(filters.date);
       
@@ -68,25 +128,17 @@ const ViewAppointmentlist = () => {
     if (!status) return 'bg-gray-100 text-gray-800';
     
     switch (status.toLowerCase()) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'accepted':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'paid':
-        return 'bg-emerald-100 text-emerald-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'accepted': return 'bg-green-100 text-green-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'paid': return 'bg-emerald-100 text-emerald-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFilters(prev => ({ ...prev, [name]: value }));
   };
 
   const resetFilters = () => {
@@ -102,28 +154,27 @@ const ViewAppointmentlist = () => {
     { header: 'PATIENT', accessor: 'patientName' },
     { header: 'DOCTOR', accessor: 'doctorName' },
     { header: 'DEPARTMENT', accessor: 'department' },
-    { header: 'DATE&Time', accessor: 'appointmentDate' },
+    { header: 'DATE & TIME', accessor: 'appointmentDate' },
     { 
-        header: 'STATUS', 
-        accessor: 'status',
-        cell: (row) => (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row.status)}`}>
-            {row.status}
-          </span>
-        )
-      },
-      { 
-        header: 'PAYMENT', 
-        accessor: 'paymentStatus',
-        cell: (row) => (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row.paymentStatus)}`}>
-            {row.paymentStatus}
-          </span>
-        )
-      },
-    ];
+      header: 'STATUS', 
+      accessor: 'status',
+      cell: (row) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row.status)}`}>
+          {row.status}
+        </span>
+      )
+    },
+    { 
+      header: 'PAYMENT', 
+      accessor: 'paymentStatus',
+      cell: (row) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row.paymentStatus)}`}>
+          {row.paymentStatus}
+        </span>
+      )
+    },
+  ];
 
-  // Transform the API data to match the table structure
   const tableData = filteredData.map(appointment => ({
     patientName: appointment.bookedPatient?.name || 'N/A',
     doctorName: appointment.bookedDoctor?.name || 'N/A',
@@ -134,14 +185,6 @@ const ViewAppointmentlist = () => {
     originalData: appointment
   }));
 
-  const handleEdit = (row) => {
-    console.log('Edit:', row.originalData);
-  };
-
-  const handleDelete = (row) => {
-    console.log('Delete:', row.originalData);
-  };
-
   const handleView = (row) => {
     console.log('View:', row.originalData);
   };
@@ -150,7 +193,7 @@ const ViewAppointmentlist = () => {
   if (error) return <div className="flex justify-center items-center h-screen">Error: {error}</div>;
 
   return (
-    <div className="flex">
+    <div className="flex relative">
       <Sidebar role="admin" />
       
       <div className="flex-1 p-4">
@@ -158,7 +201,6 @@ const ViewAppointmentlist = () => {
           <h1 className="text-2xl font-bold mb-3">Appointments</h1>
           
           <div className="flex justify-between items-center">
-            {/* Search Bar - Now on the left side under heading */}
             <div className="relative w-full md:w-1/2">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
@@ -172,7 +214,6 @@ const ViewAppointmentlist = () => {
               />
             </div>
             
-            {/* Filter Button - Now on the right side */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2dd4bf] hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 ml-4"
@@ -183,7 +224,6 @@ const ViewAppointmentlist = () => {
           </div>
         </div>
 
-        {/* Filter Dropdown (conditionally shown) */}
         {showFilters && (
           <div className="bg-white p-4 rounded-md shadow-md mb-4 border border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -245,7 +285,7 @@ const ViewAppointmentlist = () => {
         <ReusableTable
           columns={columns}
           data={tableData}
-          onEdit={handleEdit}
+          onEdit={(row) => openModal(row.originalData)}
           onDelete={handleDelete}
           onClick={handleView}
           striped={true}
@@ -253,6 +293,38 @@ const ViewAppointmentlist = () => {
           bordered={true}
         />
       </div>
+      
+      {/* Edit Appointment Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b p-4">
+              <h2 className="text-xl font-semibold">Edit Appointment</h2>
+              <button 
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <div className="p-6">
+              <EditAppointmentTimeBox 
+                appointment={currentAppointment}
+                onClose={closeModal}
+                onSave={handleUpdateAppointment}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {isDeleteDialogOpen && (
+  <DeleteDialog 
+    onClose={cancelDelete}
+    onConfirm={confirmDelete}
+  />
+)}
     </div>
   );
 };

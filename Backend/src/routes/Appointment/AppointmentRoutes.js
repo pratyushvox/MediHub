@@ -6,8 +6,7 @@ import { getAppointments } from "../../controllers/Appointment/GetAppointmentCon
 import { createAppointment } from "../../controllers/Appointment/CreateAppointmentController.js";
 import { updateAppointmentStatus } from "../../controllers/Appointment/Updateappointmentcontroller.js";
 import {UpdateConsultationStatusandNotes} from "../../controllers/Appointment/UpdateConsulationstatus.js";
-
-
+import { updateAppointmentTime } from "../../controllers/Appointment/Updatetappointmenttimeslots.js";
 
 const router = express.Router();
 
@@ -16,11 +15,11 @@ router.put("/appointments/editAppointment", editAppointment);
 router.delete("/appointments/delete/:id", deleteAppointment);
 router.get("/appointments/getAppointment", getAppointments);
 
-
+// Status updates
 router.put("/appointments/:appointmentId/status", updateAppointmentStatus);
 router.put("/appointments/:appointmentId/ConsultationStatusandNotes", UpdateConsultationStatusandNotes);
 
-
-
+// Time update route
+router.put("/appointments/:appointmentId/time", updateAppointmentTime);
 
 export default router;
