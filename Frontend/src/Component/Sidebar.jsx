@@ -30,7 +30,7 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
     doctor: [
       { title: 'Dashboard', icon: Home, href: '/doctor/dashboard' },
       { title: 'Appointments', icon: Calendar, href: '/doctor/viewappointment'  },
-      { title: 'Message', icon: MessageCircle, href: '/doctor/prescriptions' },
+      { title: 'Message', icon: MessageCircle, href: '/doctor/chat' },
       { title: 'Online consulation', icon: Video, href: '/doctor/prescriptions' },
       
       
@@ -40,7 +40,7 @@ const Sidebar = ({ role = 'patient', className = '' }) => {
       { title: 'View Appointments', icon: Calendar, href: '/patient/viewappointments' },  
       { title: 'Book Appointment', icon: FilePlus, href: '/patient/BookAppointment' },  
       { title: 'Documents', icon: Folder, href: '/Patient/Documentlist' },  
-      { title: 'Messages', icon: MessageSquare, href: '/patient/invoices' },  
+      { title: 'Messages', icon: MessageSquare, href: '/Patient/chat' },  
       
       { title: 'Lab Report', icon: FlaskConical, href: '/Patient/Labreport' },  
     ],

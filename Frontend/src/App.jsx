@@ -3,6 +3,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import { NotificationProvider } from '../src/Context/Notificationcontext';
+import PatientChat from './Page/Patient/Patientchat';
 
 // Landing Page
 import Landingpage from './page/Landingpage';
@@ -39,6 +40,7 @@ import Doctorprofile from './Page/Doctor/Doctorprofile';
 import AppointmentsTable from './Page/Doctor/Appointment';
 import Patientprofiledoctor from './Page/Doctor/Patientprofileview';
 import Doctordash from './Page/Doctor/Docdashboard';
+import DoctorChat from './Page/Doctor/Doctorchat';
 
 // Components
 import ClinicTestRequestForm from './Component/ClinicLabForm';
@@ -67,6 +69,7 @@ function App() {
           <Route path="/payment/sucess" element={<SuccessPage />} />
           <Route path="/Patient/Labreport" element={<Labreportstats />} />
           <Route path="/Patient/Doctor/:id" element={<Doctorprofilenadreview />} />
+          <Route path="/Patient/chat" element={<PatientChat />} />
           
           {/* Admin Routes */}
           <Route path="/admin/Login" element={<AdminLogin />} />
@@ -84,6 +87,7 @@ function App() {
           <Route path="/doctor/profile" element={<Doctorprofile />} />
           <Route path="/doctor/viewappointment" element={<AppointmentsTable />} />
           <Route path="/doctor/patient/:id" element={<Patientprofiledoctor />} />
+          <Route path="/doctor/chat" element={<DoctorChat />} />
         </Routes>
       </Router>
     </NotificationProvider>

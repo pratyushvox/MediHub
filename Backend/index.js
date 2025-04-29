@@ -6,6 +6,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import { setupSocket } from './src/Socket/Socket.js';
 import Notificationroutes from "./src/routes/Notification/Notificationroutes.js";
+import Chatroutes from "./src/routes/Chat/Chatroutes.js"
 
 
 
@@ -57,6 +58,7 @@ app.use("/api", labreportroutes);
 app.use("/api/reviews",Reviewandcommentroutes );
 app.use('/api/files',Fileuploadroutes);
 app.use('/api/notifications', Notificationroutes);
+app.use('/api/chat', Chatroutes);
 
 
 
