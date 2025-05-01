@@ -7,15 +7,32 @@ import Doctor from '../../models/Doctor/Doctorsignupmodel.js';
 const getRoleFromModel = (model) => 
   model === 'User' ? 'patient' : model.toLowerCase();
 
-// Helper: Populate participant details
+// Helper: Safely populate participant details
 const populateParticipant = async (participant) => {
-  const model = participant.model === 'User' ? User : Doctor;
-  const user = await model.findById(participant.item)
-    .select('name profilePic patientId doctorId specialist');
-  return {
-    ...participant.toObject(),
-    details: user || null
-  };
+  try {
+    if (!participant || !participant.model || !participant.item) {
+      return { details: null };
+    }
+
+    // Handle both Mongoose documents and plain objects
+    const participantObj = participant.toObject ? participant.toObject() : participant;
+    
+    const model = participantObj.model === 'User' ? User : Doctor;
+    const user = await model.findById(participantObj.item)
+      .select('name profilePic patientId doctorId specialist')
+      .lean();
+
+    return {
+      ...participantObj,
+      details: user || null
+    };
+  } catch (err) {
+    console.error('Error populating participant:', err);
+    return {
+      ...(participant?.toObject?.() || participant || {}),
+      details: null
+    };
+  }
 };
 
 // Create or fetch a chat
@@ -76,16 +93,25 @@ export const getChats = async (req, res) => {
           p => p.item.toString() !== recipientId
         );
         
+        if (!otherParticipant) {
+          return {
+            ...chat,
+            otherParticipant: null,
+            lastMessage: null,
+            unreadCount: 0
+          };
+        }
+
         const populated = await populateParticipant(otherParticipant);
-        const lastMessage = chat.messages[chat.messages.length - 1];
+        const lastMessage = chat.messages?.[chat.messages.length - 1] || null;
 
         return {
           ...chat,
           otherParticipant: populated.details,
           lastMessage,
-          unreadCount: chat.messages.filter(
+          unreadCount: chat.messages?.filter(
             m => m.sender.toString() !== recipientId && m.status === 'sent'
-          ).length
+          ).length || 0
         };
       })
     );
@@ -147,73 +173,92 @@ export const getMessages = async (req, res) => {
 };
 
 // Send message with enhanced delivery
+// Send message with enhanced delivery
 export const sendMessage = async (req, res) => {
-  const { chatId, sender, senderModel, content, attachment } = req.body;
+    const { chatId, sender, senderModel, content, attachment } = req.body;
+    
+    try {
+      // Validate input
+      if (!chatId || !sender || !senderModel || !content?.trim()) {
+        return res.status(400).json({ error: 'Missing required fields' });
+      }
   
-  try {
-    // Validate input
-    if (!chatId || !sender || !senderModel || !content?.trim()) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Verify sender exists
-    const Model = senderModel === 'User' ? User : Doctor;
-    const senderExists = await Model.exists({ _id: sender });
-    if (!senderExists) {
-      return res.status(404).json({ error: 'Sender not found' });
-    }
-
-    const message = { 
-      sender, 
-      senderModel, 
-      content: content.trim(), 
-      attachment,
-      status: 'sent',
-      createdAt: new Date()
-    };
-
-    // Save to DB
-    const chat = await Chat.findByIdAndUpdate(
-      chatId,
-      { 
-        $push: { messages: message }, 
-        $set: { updatedAt: new Date() } 
-      },
-      { new: true }
-    ).populate('messages.sender', 'name profilePic patientId doctorId');
-
-    if (!chat) {
-      return res.status(404).json({ error: 'Chat not found' });
-    }
-
-    const latestMessage = chat.messages[chat.messages.length - 1];
-    const io = getIO();
-
-    // Emit to both participants with proper room names
-    for (const participant of chat.participants) {
-      const role = getRoleFromModel(participant.model);
-      const room = `${role}:${participant.item}`;
+      // Verify sender exists
+      const Model = senderModel === 'User' ? User : Doctor;
+      const senderExists = await Model.exists({ _id: sender });
+      if (!senderExists) {
+        return res.status(404).json({ error: 'Sender not found' });
+      }
+  
+      // Check for duplicate messages (same content within last 5 seconds)
+      const chat = await Chat.findById(chatId);
+      if (!chat) {
+        return res.status(404).json({ error: 'Chat not found' });
+      }
+  
+      const now = new Date();
+      const fiveSecondsAgo = new Date(now.getTime() - 5000);
       
-      console.log(`📤 Emitting to ${room}`);
-      io.to(room).emit('newMessage', {
+      const duplicateMessage = chat.messages.find(msg => 
+        msg.content === content.trim() && 
+        msg.sender.toString() === sender && 
+        new Date(msg.createdAt) > fiveSecondsAgo
+      );
+  
+      if (duplicateMessage) {
+        return res.status(200).json(duplicateMessage);
+      }
+  
+      const message = { 
+        sender, 
+        senderModel, 
+        content: content.trim(), 
+        attachment,
+        status: 'sent',
+        createdAt: now
+      };
+  
+      // Save to DB
+      const updatedChat = await Chat.findByIdAndUpdate(
+        chatId,
+        { 
+          $push: { messages: message }, 
+          $set: { updatedAt: now } 
+        },
+        { new: true }
+      ).populate('messages.sender', 'name profilePic patientId doctorId');
+  
+      const latestMessage = updatedChat.messages[updatedChat.messages.length - 1];
+      const io = getIO();
+  
+      // Add a unique message identifier
+      const messagePayload = {
         ...latestMessage.toObject(),
-        chatId: chat._id,
+        _id: latestMessage._id.toString(), // Ensure _id is string
+        chatId: chat._id.toString(),
         senderDetails: {
           name: latestMessage.sender.name,
           profilePic: latestMessage.sender.profilePic,
-          id: latestMessage.sender._id,
+          id: latestMessage.sender._id.toString(),
           identifier: latestMessage.sender.patientId || latestMessage.sender.doctorId
         }
-      });
+      };
+  
+      // Emit to both participants with proper room names
+      for (const participant of updatedChat.participants) {
+        const role = getRoleFromModel(participant.model);
+        const room = `${role}:${participant.item}`;
+        
+        console.log(`📤 Emitting to ${room}`);
+        io.to(room).emit('newMessage', messagePayload);
+      }
+  
+      res.status(201).json(latestMessage);
+    } catch (err) {
+      console.error('❌ Send message error:', err);
+      res.status(500).json({ error: 'Unable to send message' });
     }
-
-    res.status(201).json(latestMessage);
-  } catch (err) {
-    console.error('❌ Send message error:', err);
-    res.status(500).json({ error: 'Unable to send message' });
-  }
-};
-
+  };
 // Additional utility controller
 export const getChatParticipant = async (req, res) => {
   const { chatId, userId } = req.params;
