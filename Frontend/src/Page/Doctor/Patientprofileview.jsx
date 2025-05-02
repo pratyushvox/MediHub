@@ -18,23 +18,32 @@ function Patientprofiledoctor() {
         const fetchPatientData = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get(`http://localhost:4000/api/appointments/getAppointment`, {
-                    params: { patientId: id }
-                });
                 
-                // Set patient data from the first appointment if available
-                if (response.data && response.data.length > 0) {
-                    setPatientData(response.data[0].bookedPatient);
-                    setAppointments(response.data);
+                // First, fetch the patient details directly
+                const patientResponse = await axios.get(`http://localhost:4000/api/users/${id}`);
+                if (patientResponse.data) {
+                    setPatientData(patientResponse.data);
+                    
+                    // Now fetch the appointments for this patient
+                    const appointmentsResponse = await axios.get(`http://localhost:4000/api/appointments/getAppointment`, {
+                        params: { patientId: id }
+                    });
+                    
+                    if (appointmentsResponse.data && appointmentsResponse.data.length > 0) {
+                        setAppointments(appointmentsResponse.data);
+                    }
                     
                     // Once we have patient data, fetch lab reports using patientId
-                    if (response.data[0].bookedPatient.patientId) {
-                        fetchLabReports(response.data[0].bookedPatient.patientId);
+                    if (patientResponse.data.patientId) {
+                        fetchLabReports(patientResponse.data.patientId);
                     }
+                } else {
+                    throw new Error('No patient data found');
                 }
+                
                 setLoading(false);
             } catch (err) {
-                setError('Failed to load patient data');
+                setError('Failed to load patient data: ' + (err.message || 'Unknown error'));
                 setLoading(false);
                 console.error('Error fetching patient data:', err);
             }
@@ -194,44 +203,55 @@ function Patientprofiledoctor() {
                             {activeTab === 'appointment' && (
                                 <div className="mt-6 space-y-4">
                                     {appointments.length > 0 ? (
-                                        appointments.map((appointment, index) => (
-                                            <div 
-                                                key={appointment._id} 
-                                                className={`relative pl-8 border-l-2 ${index === 0 ? 'border-blue-400' : 'border-blue-200'}`}
-                                            >
-                                                <div className={`absolute left-[-8px] top-2 w-4 h-4 rounded-full ${index === 0 ? 'bg-blue-500' : 'bg-blue-200'}`}></div>
-                                                <div className="bg-white rounded-lg p-4 shadow-sm">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <div>
-                                                            <h4 className="font-semibold">{appointment.appointmentDate}</h4>
-                                                            <p className="text-sm text-gray-500">{appointment.appointmentTime}</p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="font-medium">Doctor</p>
-                                                            <p className="text-sm text-gray-600">{appointment.bookedDoctor.name}</p>
-                                                        </div>
+                                        appointments.map((appointment, index) => {
+                                            // Add null checks to avoid errors
+                                            if (!appointment.bookedDoctor) {
+                                                return (
+                                                    <div key={`missing-doctor-${index}`} className="bg-white rounded-lg p-4 shadow-sm">
+                                                        <p>Appointment data incomplete (missing doctor information)</p>
                                                     </div>
-                                                    <div className="mt-2">
-                                                        <p className="text-gray-600 text-sm">Consultation Status</p>
-                                                        <p className="font-medium capitalize">{appointment.consultationStatus || "Visit Dr for consultation"}</p>
-                                                    </div>
-                                                    {appointment.consultationNotes && (
+                                                );
+                                            }
+                                            
+                                            return (
+                                                <div 
+                                                    key={appointment._id} 
+                                                    className={`relative pl-8 border-l-2 ${index === 0 ? 'border-blue-400' : 'border-blue-200'}`}
+                                                >
+                                                    <div className={`absolute left-[-8px] top-2 w-4 h-4 rounded-full ${index === 0 ? 'bg-blue-500' : 'bg-blue-200'}`}></div>
+                                                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <h4 className="font-semibold">{appointment.appointmentDate}</h4>
+                                                                <p className="text-sm text-gray-500">{appointment.appointmentTime}</p>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="font-medium">Doctor</p>
+                                                                <p className="text-sm text-gray-600">{appointment.bookedDoctor.name}</p>
+                                                            </div>
+                                                        </div>
                                                         <div className="mt-2">
-                                                            <p className="text-gray-600 text-sm">Consultation Notes</p>
-                                                            <p className="text-gray-700">{appointment.consultationNotes}</p>
+                                                            <p className="text-gray-600 text-sm">Consultation Status</p>
+                                                            <p className="font-medium capitalize">{appointment.consultationStatus || "Visit Dr for consultation"}</p>
                                                         </div>
-                                                    )}
-                                                    <div className="mt-2">
-                                                        <p className="text-gray-600 text-sm">Appointment Type</p>
-                                                        <p className="text-gray-700">{appointment.appointmentType}</p>
-                                                    </div>
-                                                    <div className="mt-2">
-                                                        <p className="text-gray-600 text-sm">Reason</p>
-                                                        <p className="text-gray-700">{appointment.appointmentReason}</p>
+                                                        {appointment.consultationNotes && (
+                                                            <div className="mt-2">
+                                                                <p className="text-gray-600 text-sm">Consultation Notes</p>
+                                                                <p className="text-gray-700">{appointment.consultationNotes}</p>
+                                                            </div>
+                                                        )}
+                                                        <div className="mt-2">
+                                                            <p className="text-gray-600 text-sm">Appointment Type</p>
+                                                            <p className="text-gray-700">{appointment.appointmentType}</p>
+                                                        </div>
+                                                        <div className="mt-2">
+                                                            <p className="text-gray-600 text-sm">Reason</p>
+                                                            <p className="text-gray-700">{appointment.appointmentReason}</p>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))
+                                            );
+                                        })
                                     ) : (
                                         <div className="bg-white rounded-lg p-4 shadow-sm text-center">
                                             <p>No appointment history found</p>
