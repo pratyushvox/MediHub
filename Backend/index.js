@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import { setupSocket } from './src/Socket/Socket.js';
 import Notificationroutes from "./src/routes/Notification/Notificationroutes.js";
 import Chatroutes from "./src/routes/Chat/Chatroutes.js"
+import Sendmeetlinkroutes from "./src/routes/Sendmeetlinkroutes.js"
 
 
 
@@ -59,6 +60,8 @@ app.use("/api/reviews",Reviewandcommentroutes );
 app.use('/api/files',Fileuploadroutes);
 app.use('/api/notifications', Notificationroutes);
 app.use('/api/chat', Chatroutes);
+app.use('/api/email', Sendmeetlinkroutes);
+
 
 
 
