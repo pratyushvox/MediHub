@@ -3,6 +3,9 @@ import Sidebar from "../../Component/Sidebar";
 import { FileText, Download, Share2, Printer, ChevronDown, ChevronUp, Search, PlusCircle, User, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import { useReactToPrint } from 'react-to-print';
 
 const AdminLabReports = () => {
   const navigate = useNavigate();
@@ -458,20 +461,7 @@ const AdminLabReports = () => {
                       </table>
                     </div>
 
-                    <div className="flex justify-end gap-3">
-                      <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <Download className="h-4 w-4" />
-                        Download PDF
-                      </button>
-                      <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <Share2 className="h-4 w-4" />
-                        Share
-                      </button>
-                      <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <Printer className="h-4 w-4" />
-                        Print
-                      </button>
-                    </div>
+                    
                   </div>
                 )}
               </div>
