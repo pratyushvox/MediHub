@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import axios from 'axios';
 
 function EditDocProfile({ onClose }) {
+  const [activeTab, setActiveTab] = useState('personalDetails');
   const [doctorData, setDoctorData] = useState({
     name: '',
     availableTime: '',
@@ -16,6 +17,11 @@ function EditDocProfile({ onClose }) {
     phone: '',
     email: '',
     profilePic: ''
+  });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,6 +57,11 @@ function EditDocProfile({ onClose }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setDoctorData({ ...doctorData, [name]: value });
+  };
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData({ ...passwordData, [name]: value });
   };
 
   const handleImageChange = async (e) => {
@@ -97,7 +108,7 @@ function EditDocProfile({ onClose }) {
     return initials || <User className="w-8 h-8" />;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmitProfile = async (e) => {
     e.preventDefault();
     setError(null);
 
@@ -119,6 +130,52 @@ function EditDocProfile({ onClose }) {
     }
   };
 
+  const handleSubmitPassword = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    // Validate password match
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setError("New passwords don't match");
+      return;
+    }
+
+    // Validate password length
+    if (passwordData.newPassword.length < 6) {
+      setError("New password must be at least 6 characters long");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${baseUrl}doctor/change-password/${doctorId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update password');
+      }
+
+      toast.success('Password updated successfully!');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setError(null);
+      setActiveTab('personalDetails');
+    } catch (err) {
+      setError(err.message);
+      toast.error(err.message);
+    }
+  };
+
   if (loading) return <div className="text-center py-4">Loading...</div>;
   if (error) return <div className="text-center py-4 text-red-500">Error: {error}</div>;
 
@@ -132,7 +189,7 @@ function EditDocProfile({ onClose }) {
           </button>
         </div>
 
-        {/* Profile Picture Section - Matching the patient profile design */}
+        {/* Profile Picture Section */}
         <div className="flex flex-col items-center mb-6">
           <div className="relative group">
             {isUploading ? (
@@ -169,138 +226,242 @@ function EditDocProfile({ onClose }) {
               disabled={isUploading}
             />
           </div>
-          <button
-            onClick={triggerFileInput}
-            disabled={isUploading}
-            className="mt-2 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
-          >
-            {doctorData.profilePic ? 'Change photo' : 'Upload photo'}
-          </button>
-          {doctorData.profilePic && !isUploading && (
+          <div className="flex flex-col items-center mt-2 text-center">
             <button
-              onClick={() => setDoctorData(prev => ({ ...prev, profilePic: '' }))}
-              className="mt-1 text-xs text-red-500 hover:text-red-700"
+              onClick={triggerFileInput}
+              disabled={isUploading}
+              className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
             >
-              Remove photo
+              Change photo
             </button>
-          )}
+            {doctorData.profilePic && !isUploading && (
+              <button
+                onClick={() => setDoctorData(prev => ({ ...prev, profilePic: '' }))}
+                className="mt-1 text-xs text-red-500 hover:text-red-700"
+              >
+                Remove photo
+              </button>
+            )}
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Full Name</label>
-            <input
-              type="text"
-              name="name"
-              value={doctorData.name}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-              required
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Specialty</label>
-            <input
-              type="text"
-              name="specialist"
-              value={doctorData.specialist}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-              required
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Available Time</label>
-            <input
-              type="text"
-              name="availableTime"
-              value={doctorData.availableTime}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-              required
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Experience (Years)</label>
-            <input
-              type="text"
-              name="experience"
-              value={doctorData.experience}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-              required
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Degree</label>
-            <input
-              type="text"
-              name="degree"
-              value={doctorData.degree}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-              required
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Address</label>
-            <input
-              type="text"
-              name="address"
-              value={doctorData.address}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-              required
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Consultation Fee</label>
-            <input
-              type="number"
-              name="price"
-              value={doctorData.price}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-              required
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Phone Number</label>
-            <input
-              type="text"
-              name="phone"
-              value={doctorData.phone}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-              required
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={doctorData.email}
-              readOnly
-              className="w-full border p-2 rounded bg-gray-200 cursor-not-allowed"
-            />
-          </div>
-          <div className="col-span-2 flex justify-end space-x-2 mt-4">
-            <button 
-              type="button" 
-              onClick={onClose} 
-              className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="bg-[#0367A3] text-white px-4 py-2 rounded hover:bg-[#035a8c] transition-colors"
-            >
-              Save Changes
-            </button>
-          </div>
-        </form>
+        {/* Tab Navigation */}
+        <div className="flex border-b mb-4">
+          <button
+            className={`px-4 py-2 font-medium ${
+              activeTab === 'personalDetails'
+                ? 'text-[#0367A3] border-b-2 border-[#0367A3]'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('personalDetails')}
+          >
+            Professional Details
+          </button>
+          <button
+            className={`px-4 py-2 font-medium ${
+              activeTab === 'changePassword'
+                ? 'text-[#0367A3] border-b-2 border-[#0367A3]'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('changePassword')}
+          >
+            Change Password
+          </button>
+        </div>
+
+        {/* Professional Details Form */}
+        {activeTab === 'personalDetails' && (
+          <form onSubmit={handleSubmitProfile} className="grid grid-cols-2 gap-4">
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                value={doctorData.name}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Specialty</label>
+              <input
+                type="text"
+                name="specialist"
+                value={doctorData.specialist}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Available Time</label>
+              <input
+                type="text"
+                name="availableTime"
+                value={doctorData.availableTime}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Experience (Years)</label>
+              <input
+                type="text"
+                name="experience"
+                value={doctorData.experience}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Degree</label>
+              <input
+                type="text"
+                name="degree"
+                value={doctorData.degree}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Address</label>
+              <input
+                type="text"
+                name="address"
+                value={doctorData.address}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Consultation Fee</label>
+              <input
+                type="number"
+                name="price"
+                value={doctorData.price}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Phone Number</label>
+              <input
+                type="text"
+                name="phone"
+                value={doctorData.phone}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+                required
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={doctorData.email}
+                readOnly
+                className="w-full border p-2 rounded bg-gray-200 cursor-not-allowed"
+              />
+            </div>
+            <div className="col-span-2 flex justify-end space-x-2 mt-4">
+              <button 
+                type="button" 
+                onClick={onClose} 
+                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                className="bg-[#0367A3] text-white px-4 py-2 rounded hover:bg-[#035a8c] transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Change Password Form */}
+        {activeTab === 'changePassword' && (
+          <form onSubmit={handleSubmitPassword} className="space-y-4">
+            {error && (
+              <div className="text-red-500 text-sm mb-2">{error}</div>
+            )}
+            <div>
+              <label className="text-sm font-medium text-gray-700">Current Password</label>
+              <input
+                type="password"
+                name="currentPassword"
+                value={passwordData.currentPassword}
+                onChange={handlePasswordChange}
+                className="w-full border border-[#0367A3] p-2 rounded mt-1"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">New Password</label>
+              <input
+                type="password"
+                name="newPassword"
+                value={passwordData.newPassword}
+                onChange={handlePasswordChange}
+                className="w-full border border-[#0367A3] p-2 rounded mt-1"
+                required
+                minLength={6}
+              />
+              <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters long</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Confirm New Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={passwordData.confirmPassword}
+                onChange={handlePasswordChange}
+                className="w-full border border-[#0367A3] p-2 rounded mt-1"
+                required
+                minLength={6}
+              />
+              {passwordData.newPassword !== passwordData.confirmPassword && 
+                passwordData.confirmPassword && (
+                  <p className="text-red-500 text-xs mt-1">Passwords do not match</p>
+                )
+              }
+            </div>
+            <div className="flex justify-end space-x-2 mt-4">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setActiveTab('personalDetails');
+                  setError(null);
+                }} 
+                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 transition-colors"
+              >
+                Back
+              </button>
+              <button 
+                type="submit" 
+                className="bg-[#0367A3] text-white px-4 py-2 rounded hover:bg-[#035a8c] transition-colors"
+                disabled={
+                  !passwordData.currentPassword || 
+                  !passwordData.newPassword || 
+                  !passwordData.confirmPassword ||
+                  passwordData.newPassword !== passwordData.confirmPassword ||
+                  passwordData.newPassword.length < 6
+                }
+              >
+                Update Password
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import updateDocDetails from '../../controllers/Doctor/UpdateDocdetailscontrolle
 import { deleteDoctor } from '../../controllers/Doctor/DeleteDocdetails.js';
 import upload from '../../Cloudinary/Cloudinaryupload.js'; // Import the multer + cloudinary upload middleware
 import { uploadDoctorProfilePicture} from '../../controllers/Doctor/Uploaddocprofile.js'; // The controller to handle after upload
+import { changePassword } from '../../controllers/Doctor/Passwordchange.js'
 
 
 const router = express.Router();
@@ -28,6 +29,9 @@ router.put('/doctor/updatedetails/:docid',updateDocDetails);
 
 // delete a doctor 
 router.delete("/doctor/deletedoctor/:docid", deleteDoctor);
+
+//password updating
+router.put('/doctor/change-password/:id', changePassword);
 
 
 //uploading doc profile 
