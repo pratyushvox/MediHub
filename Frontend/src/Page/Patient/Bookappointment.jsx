@@ -4,6 +4,8 @@ import Sidebar from '../../Component/Sidebar';
 import PatientNavbar from '../../Component/Patientnavbar';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import khalti from "../../Images/khaltilogo.png"
+
 
 
 function BookAppointment() {
@@ -295,9 +297,9 @@ const handleDoctorSelect = (doctor) => {
   const renderStep1 = () => (
     <>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-6">Book an Appointment</h1>
+        <h1 className="text-3xl font-bold mb-10">Book an Appointment</h1>
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold mb-4">Select a Doctor</h2>
+          <h2 className="text-2xl font-semibold mb-6">Select a Doctor</h2>
           <div className="flex flex-wrap gap-2 bg-gray-200 p-1 rounded-lg">
             {specialties.map((specialty) => (
               <button
@@ -694,7 +696,7 @@ const handleDoctorSelect = (doctor) => {
         >
           <div className="flex items-center gap-3">
             <img 
-              src="/khalti-logo.png" 
+              src={khalti} 
               alt="Khalti" 
               className="h-6" 
             />
@@ -782,21 +784,21 @@ const handleDoctorSelect = (doctor) => {
    
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Fixed Navbar at the top */}
-      <div className="fixed top-0 left-0 right-0 z-50">
-        <PatientNavbar />
+    <div className="flex">
+      {/* Fixed Sidebar */}
+      <div className="fixed left-0 top-0 h-screen w-64 z-40">
+        <Sidebar role="patient" />
       </div>
 
-      {/* Sidebar and Main Content */}
-      <div className="flex pt-16"> {/* Add padding-top to account for the fixed navbar */}
-        {/* Fixed Sidebar on the left */}
-        <div className="fixed left-0 top-16 h-screen w-64 z-40">
-          <Sidebar />
+      {/* Main Content */}
+      <div className="flex flex-col w-full bg-gray-100 min-h-screen ml-64 mt-10">
+        {/* Fixed Navbar */}
+        <div className="fixed top-0 left-64 right-0 z-30">
+          <PatientNavbar pageTitle="Book Appointment " />
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 ml-64 p-8"> {/* Add margin-left to account for the fixed sidebar */}
+        <div className="flex-1 ml-68 p-8 mt-20"> {/* Add margin-left to account for the fixed sidebar */}
           <div className="max-w-6xl mx-auto">
             {renderStepIndicator()}
             {currentStep === 1 && renderStep1()}

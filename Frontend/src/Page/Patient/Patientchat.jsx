@@ -603,17 +603,7 @@ function PatientChat() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <button className="p-2 hover:bg-gray-100 rounded-full">
-                    <Phone className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-full">
-                    <Video className="w-5 h-5 text-gray-600" />
-                  </button>
-                  <button className="p-2 hover:bg-gray-100 rounded-full">
-                    <MoreVertical className="w-5 h-5 text-gray-600" />
-                  </button>
-                </div>
+                
               </div>
 
               {/* Messages */}
@@ -670,9 +660,7 @@ function PatientChat() {
               {/* Message Input */}
               <div className="bg-white border-t border-gray-200 p-4">
                 <div className="flex items-center space-x-2">
-                  <button className="p-2 hover:bg-gray-100 rounded-full">
-                    <Paperclip className="w-5 h-5 text-gray-500" />
-                  </button>
+                 
                   <div className="flex-1 relative">
                     <input
                       type="text"
@@ -686,9 +674,7 @@ function PatientChat() {
                       placeholder="Type a message..."
                       className="w-full py-2 px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <button className="absolute right-3 top-2.5">
-                      <Smile className="w-5 h-5 text-gray-400" />
-                    </button>
+                    
                   </div>
                   <button
                     className={`p-2 rounded-full ${

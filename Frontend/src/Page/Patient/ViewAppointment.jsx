@@ -9,10 +9,15 @@ import { baseUrl } from "../../Constant/Constant";
 
 const ViewAppointment = () => {
   const [appointments, setAppointments] = useState([]);
+  const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("upcoming");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   // Define columns for the table
   const columns = [
@@ -112,7 +117,6 @@ const ViewAppointment = () => {
         } else {
           return (
             <div className="flex items-center gap-2">
-              <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />
               <span className="text-yellow-500">Pending</span>
             </div>
           );
@@ -139,23 +143,25 @@ const ViewAppointment = () => {
         
         const formattedAppointments = userAppointments.map(appointment => ({
           id: appointment._id,
-          patient: columns[0].render({
+          patient: {
             name: appointment.bookedPatient.name,
             email: appointment.bookedPatient.email
-          }),
-          doctor: columns[1].render({
+          },
+          doctor: {
             name: appointment.bookedDoctor.name,
             email: appointment.bookedDoctor.email
-          }),
-          department: columns[2].render(appointment.bookedDoctor.specialist.replace('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase())),
-          date: columns[3].render(`${appointment.appointmentTime} · ${formatDate(appointment.appointmentDate)}`),
-          status: columns[4].render(appointment.approvedByAdmin),
-          consultationStatus: columns[5].render(appointment.consultationStatus || 'pending'),
+          },
+          department: appointment.bookedDoctor.specialist.replace('_', ' ').replace(/\b\w/g, letter => letter.toUpperCase()),
+          date: `${appointment.appointmentTime} · ${formatDate(appointment.appointmentDate)}`,
+          status: appointment.approvedByAdmin,
+          consultationStatus: appointment.consultationStatus || 'pending',
           consultationNotes: appointment.consultationNotes,
-          rawData: appointment
+          rawData: appointment,
+          appointmentDate: new Date(appointment.appointmentDate)
         }));
         
         setAppointments(formattedAppointments);
+        setFilteredAppointments(formattedAppointments);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching appointments:", error);
@@ -166,6 +172,41 @@ const ViewAppointment = () => {
     
     fetchAppointments();
   }, []);
+
+  useEffect(() => {
+    filterAppointments();
+  }, [searchTerm, activeTab, statusFilter, appointments]);
+
+  const filterAppointments = () => {
+    let filtered = [...appointments];
+    
+    // Filter by search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(appointment => 
+        appointment.patient.name.toLowerCase().includes(term) ||
+        appointment.doctor.name.toLowerCase().includes(term) ||
+        appointment.department.toLowerCase().includes(term)
+      );
+    }
+    
+    // Filter by tab (upcoming/past)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (activeTab === "upcoming") {
+      filtered = filtered.filter(appointment => appointment.appointmentDate >= today);
+    } else {
+      filtered = filtered.filter(appointment => appointment.appointmentDate < today);
+    }
+    
+    // Filter by status
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(appointment => appointment.status === statusFilter);
+    }
+    
+    setFilteredAppointments(filtered);
+  };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -197,29 +238,101 @@ const ViewAppointment = () => {
     </div>
   );
 
-  const EnhancedTable = ({ columns, data, ...rest }) => {
-    const processedColumns = columns.map(col => {
-      if (col.render) {
-        return {
-          header: col.header,
-          accessor: col.accessor,
-          renderCell: true
-        };
-      }
-      return col;
-    });
+  const toggleStatusDropdown = () => {
+    setShowStatusDropdown(!showStatusDropdown);
+  };
 
-    const processedData = data.map(row => {
-      const newRow = { ...row };
-      columns.forEach(col => {
-        if (col.render) {
-          newRow[col.accessor] = col.render(row[col.accessor]);
-        }
-      });
-      return newRow;
-    });
+  const handleStatusFilterChange = (status) => {
+    setStatusFilter(status);
+    setShowStatusDropdown(false);
+  };
 
-    return
+  const renderConsultationNotes = () => {
+    if (selectedAppointment.approvedByAdmin === "Rejected") {
+      return (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">
+                Your appointment was cancelled. Please book another appointment if you need consultation.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (selectedAppointment.consultationStatus === "completed") {
+      return (
+        <div className="bg-white p-4 rounded border border-gray-200">
+          {selectedAppointment.consultationNotes ? (
+            <>
+              <p className="text-gray-700 font-medium mb-2">Consultation Summary:</p>
+              <p className="text-gray-700">{selectedAppointment.consultationNotes}</p>
+              {selectedAppointment.rawData?.hemoglobin && (
+                <div className="mt-4">
+                  <p className="text-gray-700 font-medium mb-2">Test Results:</p>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parameter</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference Range</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        <tr>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">Hemoglobin</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{selectedAppointment.rawData.hemoglobin}</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">12.0-15.0</td>
+                          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                            {parseFloat(selectedAppointment.rawData.hemoglobin) > 15.0 ? (
+                              <span className="text-red-600">High</span>
+                            ) : parseFloat(selectedAppointment.rawData.hemoglobin) < 12.0 ? (
+                              <span className="text-yellow-600">Low</span>
+                            ) : (
+                              <span className="text-green-600">Normal</span>
+                            )}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-gray-500 italic">No consultation notes provided by the doctor.</p>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-yellow-700">
+              {selectedAppointment.approvedByAdmin === "Pending"
+                ? "Your appointment is pending approval. Please wait for confirmation."
+                : `Your consultation is still pending. Please visit the doctor at your scheduled appointment time (${selectedAppointment.appointmentTime} on ${formatDate(selectedAppointment.appointmentDate)}) to get your consultation notes and recommendations.`}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -246,6 +359,8 @@ const ViewAppointment = () => {
                 type="text"
                 placeholder="Search appointments..."
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
@@ -254,11 +369,67 @@ const ViewAppointment = () => {
                 <Calendar size={20} />
                 <span>Book Appointment</span>
               </button>
-              <button className="flex items-center gap-2 bg-teal-600 text-white py-2 px-4 rounded-lg">
-                <Filter size={20} />
-                <span>Filter</span>
-              </button>
+              
+              {/* Status Filter Dropdown */}
+              <div className="relative">
+                <button 
+                  className="flex items-center gap-2 bg-teal-600 text-white py-2 px-4 rounded-lg"
+                  onClick={toggleStatusDropdown}
+                >
+                  <Filter size={20} />
+                  <span>Filter</span>
+                  <ChevronDown size={20} />
+                </button>
+                
+                {showStatusDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                    <div className="py-1">
+                      <div className="px-4 py-2 text-sm font-medium text-gray-700 border-b">Status</div>
+                      <button 
+                        className={`block px-4 py-2 text-sm w-full text-left ${statusFilter === 'all' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}
+                        onClick={() => handleStatusFilterChange('all')}
+                      >
+                        All Statuses
+                      </button>
+                      <button 
+                        className={`block px-4 py-2 text-sm w-full text-left ${statusFilter === 'Pending' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}
+                        onClick={() => handleStatusFilterChange('Pending')}
+                      >
+                        Pending
+                      </button>
+                      <button 
+                        className={`block px-4 py-2 text-sm w-full text-left ${statusFilter === 'Accepted' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}
+                        onClick={() => handleStatusFilterChange('Accepted')}
+                      >
+                        Confirmed
+                      </button>
+                      <button 
+                        className={`block px-4 py-2 text-sm w-full text-left ${statusFilter === 'Rejected' ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-100'}`}
+                        onClick={() => handleStatusFilterChange('Rejected')}
+                      >
+                        Canceled
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex border-b border-gray-200 mb-6">
+            <button
+              className={`py-2 px-4 font-medium text-sm ${activeTab === 'upcoming' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setActiveTab('upcoming')}
+            >
+              Upcoming Appointments
+            </button>
+            <button
+              className={`py-2 px-4 font-medium text-sm ${activeTab === 'past' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setActiveTab('past')}
+            >
+              Past Appointments
+            </button>
           </div>
 
           {/* Loading, Error, or Table */}
@@ -270,23 +441,35 @@ const ViewAppointment = () => {
             <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
               <p>{error}</p>
             </div>
-          ) : appointments.length === 0 ? (
+          ) : filteredAppointments.length === 0 ? (
             <div className="bg-gray-100 p-8 text-center rounded-lg">
               <h3 className="text-xl font-medium text-gray-700">No appointments found</h3>
-              <p className="text-gray-500 mt-2">You haven't booked any appointments yet.</p>
+              <p className="text-gray-500 mt-2">
+                {activeTab === 'upcoming' 
+                  ? "You don't have any upcoming appointments." 
+                  : "You don't have any past appointments."}
+              </p>
             </div>
           ) : (
             <>
               <ReusableTable
-  columns={columns}
-  data={appointments}
-  showActions={true}
-  striped={false}
-  hoverable={true}
-  bordered={true}
-  onClick={handleRowClick}
-  renderActions={customActions}
-/>
+                columns={columns}
+                data={filteredAppointments.map(appointment => ({
+                  ...appointment,
+                  patient: columns[0].render(appointment.patient),
+                  doctor: columns[1].render(appointment.doctor),
+                  department: columns[2].render(appointment.department),
+                  date: columns[3].render(appointment.date),
+                  status: columns[4].render(appointment.status),
+                  consultationStatus: columns[5].render(appointment.consultationStatus),
+                }))}
+                showActions={true}
+                striped={false}
+                hoverable={true}
+                bordered={true}
+                onClick={handleRowClick}
+                renderActions={customActions}
+              />
               
               {/* Consultation Notes Dialog */}
               {isDialogOpen && selectedAppointment && (
@@ -358,66 +541,7 @@ const ViewAppointment = () => {
                         {/* Consultation Notes */}
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <h3 className="font-medium mb-2">Doctor's Notes</h3>
-                          {selectedAppointment.consultationStatus === 'completed' ? (
-                            <div className="bg-white p-4 rounded border border-gray-200">
-                              {selectedAppointment.consultationNotes ? (
-                                <>
-                                  <p className="text-gray-700 font-medium mb-2">Consultation Summary:</p>
-                                  <p className="text-gray-700">{selectedAppointment.consultationNotes}</p>
-                                  {selectedAppointment.rawData?.hemoglobin && (
-                                    <div className="mt-4">
-                                      <p className="text-gray-700 font-medium mb-2">Test Results:</p>
-                                      <div className="border rounded-lg overflow-hidden">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                          <thead className="bg-gray-50">
-                                            <tr>
-                                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parameter</th>
-                                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Result</th>
-                                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reference Range</th>
-                                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody className="bg-white divide-y divide-gray-200">
-                                            <tr>
-                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">Hemoglobin</td>
-                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{selectedAppointment.rawData.hemoglobin}</td>
-                                              <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">12.0-15.0</td>
-                                              <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
-                                                {parseFloat(selectedAppointment.rawData.hemoglobin) > 15.0 ? (
-                                                  <span className="text-red-600">High</span>
-                                                ) : parseFloat(selectedAppointment.rawData.hemoglobin) < 12.0 ? (
-                                                  <span className="text-yellow-600">Low</span>
-                                                ) : (
-                                                  <span className="text-green-600">Normal</span>
-                                                )}
-                                              </td>
-                                            </tr>
-                                          </tbody>
-                                        </table>
-                                      </div>
-                                    </div>
-                                  )}
-                                </>
-                              ) : (
-                                <p className="text-gray-500 italic">No consultation notes provided by the doctor.</p>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-                              <div className="flex items-start">
-                                <div className="flex-shrink-0">
-                                  <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
-                                <div className="ml-3">
-                                  <p className="text-sm text-yellow-700">
-                                    Your consultation is still pending. Please visit the doctor at your scheduled appointment time ({selectedAppointment.appointmentTime} on {formatDate(selectedAppointment.appointmentDate)}) to get your consultation notes and recommendations.
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
+                          {renderConsultationNotes()}
                         </div>
                       </div>
                     </div>

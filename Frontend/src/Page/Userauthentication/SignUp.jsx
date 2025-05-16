@@ -5,8 +5,10 @@ import Button from "../../Component/Button.jsx";
 import OtpVerification from "../../Component/OtpVerification.jsx";
 import { baseUrl } from "../../Constant/Constant.js";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const SignUp = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -167,16 +169,20 @@ const SignUp = () => {
                   type="submit"
                   className="w-full bg-[#2FA093] text-white font-semibold py-2 px-4 rounded-lg hover:bg-[#05527E] transition mt-3 "
                 />
-      <Button
-  text={
-    <span className="flex items-center justify-center gap-2">
-      <FaGoogle className="text-lg" /> Sign up with Google
-    </span>
-  }
-  type="button"
-  className="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-100 transition mt-3 shadow-sm"
-  onClick={() => window.location.href = `${baseUrl}auth/google`}
-/>
+                <div className="text-center mt-4">
+  <p className="text-sm text-gray-600">
+    Already have  an account?{" "}
+    <button
+      type="button"
+      onClick={() => navigate("/login")}
+      className="text-[#0665A7] hover:text-[#3CB5AC] font-medium"
+    >
+     Login 
+    </button>
+  </p>
+</div>
+
+     
 
 
               </div>

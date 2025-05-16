@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { baseUrl } from '../../Constant/Constant';
+import Sidebar from '../../Component/Sidebar';
+import PatientNavbar from '../../Component/PatientNavbar';
 
 const VerifyPayment = () => {
   const [searchParams] = useSearchParams();
@@ -40,7 +42,22 @@ const VerifyPayment = () => {
   };
 
   return (
+     <div className="flex">
+      {/* Fixed Sidebar */}
+      <div className="fixed left-0 top-0 h-screen w-64 z-40">
+        <Sidebar role="patient" />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-col w-full bg-gray-100 min-h-screen ml-64 mt-10">
+        {/* Fixed Navbar */}
+        <div className="fixed top-0 left-64 right-0 z-30">
+          <PatientNavbar pageTitle="Payment Verification" />
+        </div>
+    
+
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-6">
+      
       <div className="bg-white shadow-lg rounded-xl p-8 max-w-lg w-full text-center border-t-4 border-[#357BA6]">
         <h2 className="text-2xl font-semibold text-[#357BA6] mb-4">Verify Your Payment</h2>
         <p className="text-gray-600">Please verify your payment to proceed.</p>
@@ -78,6 +95,8 @@ const VerifyPayment = () => {
           </button>
         )}
       </div>
+    </div>
+    </div>
     </div>
   );
 };

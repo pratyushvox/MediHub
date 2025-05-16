@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Video, Users, Clock, Settings, CheckCircle, AlertCircle, Loader2, Mail } from 'lucide-react';
+import { Calendar, Video, Users, Clock, Settings, CheckCircle, AlertCircle, Mail } from 'lucide-react';
 import Box from '../../Component/Box';
 import DoctorProfile from './Doctorprofile';
 import Editdocprofile from '../Doctor/Editdocprofile';
@@ -227,7 +227,7 @@ function Doctordash() {
       case 'cancelled':
         return <AlertCircle className="w-4 h-4 text-red-500" />;
       default:
-        return <Loader2 className="w-4 h-4 text-yellow-500 animate-spin" />;
+        return null; // Removed the loading icon for pending status
     }
   };
 
@@ -265,8 +265,8 @@ function Doctordash() {
     return (
       <div className="flex min-h-screen bg-gray-100 justify-center items-center">
         <div className="text-center py-4 flex flex-col items-center">
-          <Loader2 className="w-10 h-10 text-teal-500 animate-spin mb-2" />
-          <p className="text-gray-700">{isUpdating ? 'Updating...' : 'Loading...'}</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+          <p className="mt-2 text-gray-700">{isUpdating ? 'Updating...' : 'Loading...'}</p>
         </div>
       </div>
     );
@@ -457,7 +457,6 @@ function Doctordash() {
                         />
                       </div>
 
-                      {/* Google Meet Link Section */}
                       {selectedAppointment.appointmentType === 'Online Consultation' && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Google Meet Link</label>
@@ -481,7 +480,7 @@ function Doctordash() {
                             >
                               {isSendingLink ? (
                                 <>
-                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
                                   Sending...
                                 </>
                               ) : (
@@ -537,4 +536,4 @@ function Doctordash() {
   );
 }
 
-export default Doctordash;
+export default Doctordash; 

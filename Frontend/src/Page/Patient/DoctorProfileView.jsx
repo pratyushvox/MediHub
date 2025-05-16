@@ -62,20 +62,27 @@ function Doctorprofilenadreview() {
         
         // Filter appointments for this doctor
         const doctorAppointments = appointmentsData.filter(
-          appt => appt.bookedDoctor._id === id
+          appt => appt.bookedDoctor && appt.bookedDoctor._id === id
         );
         setAppointments(doctorAppointments);
 
-        // Calculate completed appointments
+        // Calculate completed appointments (patients treated)
         const completedAppointments = doctorAppointments.filter(
           appt => appt.consultationStatus === 'completed'
-        ).length;
+        );
+
+        // Calculate unique patients treated
+        const uniquePatients = new Set(
+          completedAppointments
+            .filter(appt => appt.bookedPatient)
+            .map(appt => appt.bookedPatient._id)
+        ).size;
 
         // Set stats based on actual data
         setStats([
           { icon: Calendar, label: "Appointments", value: doctorAppointments.length },
-          { icon: Users, label: "Patients Treated", value: completedAppointments },
-          { icon: Clock, label: "Experience", value: `${doctorData.experience} years` },
+          { icon: Users, label: "Patients Treated", value: uniquePatients },
+          { icon: Clock, label: "Experience", value: `${doctorData.experience || 0} years` },
         ]);
 
         // Fetch doctor reviews
@@ -96,10 +103,15 @@ function Doctorprofilenadreview() {
       const reviewsRes = await fetch(`http://localhost:4000/api/reviews/doctor/${id}?all=true`);
       if (!reviewsRes.ok) throw new Error("Failed to fetch reviews");
       const { data } = await reviewsRes.json();
-      console.log('Fetched reviews:', data);
       
-      // Sort reviews by date (newest first)
-      const sortedReviews = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      // Sort reviews by date (newest first) and ensure dates are properly parsed
+      const sortedReviews = data
+        .map(review => ({
+          ...review,
+          createdAt: new Date(review.createdAt)
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt);
+      
       setReviews(sortedReviews);
     } catch (err) {
       console.error("Error fetching reviews:", err);
@@ -219,6 +231,22 @@ function Doctorprofilenadreview() {
     );
   }
 
+  if (!doctor) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <PatientNavbar pageTitle="Doctor Profile" />
+        <div className="flex pt-16">
+          <Sidebar role="patient" />
+          <div className="flex-1 ml-64 p-8">
+            <div className="bg-white rounded-lg p-6 shadow-sm text-center">
+              <p className="text-red-500">Doctor not found</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="fixed top-0 left-0 right-0 z-50">
@@ -245,9 +273,15 @@ function Doctorprofilenadreview() {
                     <h1 className="text-2xl font-bold">Dr. {doctor?.name}</h1>
                     <div className="flex text-yellow-400">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <Star key={star} className="w-5 h-5 fill-current" />
+                        <Star 
+                          key={star} 
+                          className={`w-5 h-5 ${star <= Math.round(doctor?.averageRating || 0) ? 'fill-current' : ''}`}
+                        />
                       ))}
                     </div>
+                    <span className="text-gray-600 text-sm">
+                      ({doctor?.numberOfReviews || 0} reviews)
+                    </span>
                   </div>
                   <p className="text-gray-600">{doctor?.degree}</p>
                   <p className="text-gray-600">{doctor?.address}</p>
@@ -279,13 +313,13 @@ function Doctorprofilenadreview() {
                   <h2 className="text-lg font-semibold mb-3">Speciality</h2>
                   <div className="flex flex-wrap gap-2">
                     <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
-                      {doctor?.specialist}
+                      {doctor?.specialist || 'Not specified'}
                     </span>
                   </div>
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold mb-3">Available Time</h2>
-                  <p className="text-gray-700">{doctor?.availableTime}</p>
+                  <p className="text-gray-700">{doctor?.availableTime || 'Not specified'}</p>
                 </div>
               </div>
 
@@ -294,19 +328,19 @@ function Doctorprofilenadreview() {
                   <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
                     <Mail className="w-5 h-5" /> Email
                   </h2>
-                  <p className="text-gray-700">{doctor?.email}</p>
+                  <p className="text-gray-700">{doctor?.email || 'Not specified'}</p>
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
                     <Phone className="w-5 h-5" /> Phone
                   </h2>
-                  <p className="text-gray-700">{doctor?.phone}</p>
+                  <p className="text-gray-700">{doctor?.phone || 'Not specified'}</p>
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
                     <MapPin className="w-5 h-5" /> Address
                   </h2>
-                  <p className="text-gray-700">{doctor?.address}</p>
+                  <p className="text-gray-700">{doctor?.address || 'Not specified'}</p>
                 </div>
               </div>
             </div>
@@ -383,10 +417,12 @@ function Doctorprofilenadreview() {
                           </div>
                         </div>
                         <span className="text-sm text-gray-500">
-                          {new Date(review.createdAt).toLocaleDateString('en-US', {
+                          {review.createdAt.toLocaleDateString('en-US', {
                             year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
                           })}
                         </span>
                       </div>
