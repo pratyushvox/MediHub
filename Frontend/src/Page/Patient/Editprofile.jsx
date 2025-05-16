@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Upload, User, X } from "lucide-react";
 import axios from "axios";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function EditPatientProfile({ onClose }) {
   const [formData, setFormData] = useState({
@@ -21,6 +23,13 @@ function EditPatientProfile({ onClose }) {
   const [profileImage, setProfileImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const [activeTab, setActiveTab] = useState("personal"); // "personal" or "password"
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordError, setPasswordError] = useState("");
 
   const userId = localStorage.getItem("Userid");
 
@@ -41,6 +50,7 @@ function EditPatientProfile({ onClose }) {
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
+        toast.error("Failed to load user data");
       }
     };
 
@@ -65,6 +75,16 @@ function EditPatientProfile({ onClose }) {
     }
   };
 
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData({
+      ...passwordData,
+      [name]: value,
+    });
+    // Clear error when user starts typing again
+    setPasswordError("");
+  };
+
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -87,10 +107,11 @@ function EditPatientProfile({ onClose }) {
 
       if (response.data.profilePic) {
         setProfileImage(response.data.profilePic);
+        toast.success("Profile picture updated successfully");
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Failed to upload profile picture. Please try again.");
+      toast.error("Failed to upload profile picture. Please try again.");
     } finally {
       setIsUploading(false);
     }
@@ -141,10 +162,72 @@ function EditPatientProfile({ onClose }) {
 
         const updatedResponse = await response.json();
         console.log("Updated response:", updatedResponse);
+        toast.success("Profile updated successfully");
         onClose();
       }
     } catch (error) {
       console.error("Error updating user:", error);
+      toast.error("Failed to update profile");
+    }
+  };
+
+  const handlePasswordSave = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError("New passwords don't match");
+      toast.error("New passwords don't match");
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError("Password should be at least 6 characters");
+      toast.error("Password should be at least 6 characters");
+      return;
+    }
+
+    // Additional validation based on your backend requirements
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{6,}$/;
+    if (!passwordRegex.test(passwordData.newPassword)) {
+      setPasswordError("Password must include uppercase, lowercase, and number");
+      toast.error("Password must include uppercase, lowercase, and number");
+      return;
+    }
+    
+    try {
+      const response = await fetch(`http://localhost:4000/api/users/change-password/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          oldPassword: passwordData.oldPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setPasswordError(data.message || "Failed to update password");
+        toast.error(data.message || "Failed to update password");
+        return;
+      }
+
+      // Reset form and show success
+      setPasswordData({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      setPasswordError("");
+      toast.success("Password updated successfully");
+      setActiveTab("personal");
+    } catch (error) {
+      console.error("Error updating password:", error);
+      setPasswordError("An error occurred while updating password");
+      toast.error("An error occurred while updating password");
     }
   };
 
@@ -212,126 +295,213 @@ function EditPatientProfile({ onClose }) {
           )}
         </div>
 
-        <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Full Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              className="w-full border p-2 rounded bg-gray-200 cursor-not-allowed"
-              readOnly
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Phone</label>
-            <input
-              type="text"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Address</label>
-            <input
-              type="text"
-              name="address"
-              value={formData.personalinfo.address}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">District</label>
-            <input
-              type="text"
-              name="district"
-              value={formData.personalinfo.district}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Province</label>
-            <input
-              type="text"
-              name="province"
-              value={formData.personalinfo.province}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Blood Group</label>
-            <input
-              type="text"
-              name="bloodGroup"
-              value={formData.personalinfo.bloodGroup}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Allergies</label>
-            <input
-              type="text"
-              name="allergies"
-              value={formData.personalinfo.allergies}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Medical Conditions</label>
-            <input
-              type="text"
-              name="medicalConditions"
-              value={formData.personalinfo.medicalConditions}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-1">
-            <label className="text-sm font-medium text-gray-700">Emergency Contact</label>
-            <input
-              type="text"
-              name="emergencyContact"
-              value={formData.personalinfo.emergencyContact}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-2">
-            <label className="text-sm font-medium text-gray-700">Major Surgery</label>
-            <input
-              type="text"
-              name="majorSurgery"
-              value={formData.personalinfo.majorSurgery}
-              onChange={handleChange}
-              className="w-full border border-[#0367A3] p-2 rounded"
-            />
-          </div>
-          <div className="col-span-2 flex justify-end space-x-2 mt-4">
-            <button type="button" onClick={onClose} className="bg-gray-300 px-4 py-2 rounded">
-              Cancel
-            </button>
-            <button type="submit" className="bg-[#0367A3] text-white px-4 py-2 rounded">
-              Save
-            </button>
-          </div>
-        </form>
+        {/* Tab Navigation */}
+        <div className="flex border-b mb-4">
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "personal"
+                ? "text-[#0367A3] border-b-2 border-[#0367A3]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("personal")}
+          >
+            Personal Details
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "password"
+                ? "text-[#0367A3] border-b-2 border-[#0367A3]"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+            onClick={() => setActiveTab("password")}
+          >
+            Change Password
+          </button>
+        </div>
+
+        {/* Personal Details Form */}
+        {activeTab === "personal" && (
+          <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                className="w-full border p-2 rounded bg-gray-200 cursor-not-allowed"
+                readOnly
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Phone</label>
+              <input
+                type="text"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Address</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.personalinfo.address}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">District</label>
+              <input
+                type="text"
+                name="district"
+                value={formData.personalinfo.district}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Province</label>
+              <input
+                type="text"
+                name="province"
+                value={formData.personalinfo.province}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Blood Group</label>
+              <input
+                type="text"
+                name="bloodGroup"
+                value={formData.personalinfo.bloodGroup}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Allergies</label>
+              <input
+                type="text"
+                name="allergies"
+                value={formData.personalinfo.allergies}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Medical Conditions</label>
+              <input
+                type="text"
+                name="medicalConditions"
+                value={formData.personalinfo.medicalConditions}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="text-sm font-medium text-gray-700">Emergency Contact</label>
+              <input
+                type="text"
+                name="emergencyContact"
+                value={formData.personalinfo.emergencyContact}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="text-sm font-medium text-gray-700">Major Surgery</label>
+              <input
+                type="text"
+                name="majorSurgery"
+                value={formData.personalinfo.majorSurgery}
+                onChange={handleChange}
+                className="w-full border border-[#0367A3] p-2 rounded"
+              />
+            </div>
+            <div className="col-span-2 flex justify-end space-x-2 mt-4">
+              <button type="button" onClick={onClose} className="bg-gray-300 px-4 py-2 rounded">
+                Cancel
+              </button>
+              <button type="submit" className="bg-[#0367A3] text-white px-4 py-2 rounded">
+                Save
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Password Change Form */}
+        {activeTab === "password" && (
+          <form onSubmit={handlePasswordSave} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">Current Password</label>
+              <input
+                type="password"
+                name="oldPassword"
+                value={passwordData.oldPassword}
+                onChange={handlePasswordChange}
+                className="w-full border border-[#0367A3] p-2 rounded mt-1"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">New Password</label>
+              <input
+                type="password"
+                name="newPassword"
+                value={passwordData.newPassword}
+                onChange={handlePasswordChange}
+                className="w-full border border-[#0367A3] p-2 rounded mt-1"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Password must be at least 6 characters with uppercase, lowercase, and number
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">Confirm New Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={passwordData.confirmPassword}
+                onChange={handlePasswordChange}
+                className="w-full border border-[#0367A3] p-2 rounded mt-1"
+                required
+              />
+            </div>
+            {passwordError && (
+              <div className="text-red-500 text-sm">{passwordError}</div>
+            )}
+            <div className="flex justify-end space-x-2 mt-6">
+              <button 
+                type="button" 
+                onClick={() => {
+                  setActiveTab("personal");
+                  setPasswordError("");
+                }} 
+                className="bg-gray-300 px-4 py-2 rounded"
+              >
+                Back
+              </button>
+              <button type="submit" className="bg-[#0367A3] text-white px-4 py-2 rounded">
+                Update Password
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
