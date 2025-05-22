@@ -1,7 +1,3 @@
-// utils/io.js
-// This file holds the shared Socket.IO instance for the entire app.
-// 1) In server.js (or your main socket setup file), call setIO(io) once.
-// 2) Anywhere you need to broadcast or emit events, import getIO() to retrieve the same instance.
 
 let ioInstance = null;
 

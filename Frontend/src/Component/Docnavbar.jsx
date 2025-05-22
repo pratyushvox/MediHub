@@ -40,6 +40,7 @@ const DoctorNavbar = ({ doctorData, onRefresh }) => {
   const handleCloseEditProfile = () => setShowEditProfile(false);
   const handleLogout = () => {
     localStorage.removeItem('doctorId');
+    localStorage.removeItem('doctorToken') 
     navigate('/doctor/login');
   };
 

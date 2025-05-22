@@ -7,8 +7,6 @@ import OtpVerification from "../../Component/OtpVerification";
 import EmailVerificationPopup from "../../Component/EmailVerificationPopup"; // Import the new component
 import { baseUrl } from "../../Constant/Constant";
 import { toast } from "react-toastify";
-import AdminLogin from "../Admin/Adminlogin";
-import DoctorLogin from "../Doctor/Doctorlogin";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -119,14 +117,7 @@ const Login = () => {
     setShowEmailPopup(false);
   };
 
-  const handleAdminClick = () => {
-    navigate('/Admin/Login');
-  };
-
-  const handleDoctorClick = () => {
-    navigate('/doctor/login');
-  };
-
+  
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex items-center justify-center min-h-screen">

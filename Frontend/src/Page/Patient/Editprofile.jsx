@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Upload, User, X } from "lucide-react";
+import { Upload, User, X, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -30,6 +30,11 @@ function EditPatientProfile({ onClose }) {
     confirmPassword: "",
   });
   const [passwordError, setPasswordError] = useState("");
+  const [showPasswords, setShowPasswords] = useState({
+    oldPassword: false,
+    newPassword: false,
+    confirmPassword: false
+  });
 
   const userId = localStorage.getItem("Userid");
 
@@ -83,6 +88,13 @@ function EditPatientProfile({ onClose }) {
     });
     // Clear error when user starts typing again
     setPasswordError("");
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
   };
 
   const handleImageChange = async (e) => {
@@ -448,39 +460,66 @@ function EditPatientProfile({ onClose }) {
           <form onSubmit={handlePasswordSave} className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-700">Current Password</label>
-              <input
-                type="password"
-                name="oldPassword"
-                value={passwordData.oldPassword}
-                onChange={handlePasswordChange}
-                className="w-full border border-[#0367A3] p-2 rounded mt-1"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords.oldPassword ? "text" : "password"}
+                  name="oldPassword"
+                  value={passwordData.oldPassword}
+                  onChange={handlePasswordChange}
+                  className="w-full border border-[#0367A3] p-2 rounded mt-1 pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility("oldPassword")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPasswords.oldPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700">New Password</label>
-              <input
-                type="password"
-                name="newPassword"
-                value={passwordData.newPassword}
-                onChange={handlePasswordChange}
-                className="w-full border border-[#0367A3] p-2 rounded mt-1"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords.newPassword ? "text" : "password"}
+                  name="newPassword"
+                  value={passwordData.newPassword}
+                  onChange={handlePasswordChange}
+                  className="w-full border border-[#0367A3] p-2 rounded mt-1 pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility("newPassword")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPasswords.newPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               <p className="text-xs text-gray-500 mt-1">
                 Password must be at least 6 characters with uppercase, lowercase, and number
               </p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700">Confirm New Password</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={passwordData.confirmPassword}
-                onChange={handlePasswordChange}
-                className="w-full border border-[#0367A3] p-2 rounded mt-1"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords.confirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={passwordData.confirmPassword}
+                  onChange={handlePasswordChange}
+                  className="w-full border border-[#0367A3] p-2 rounded mt-1 pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility("confirmPassword")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPasswords.confirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
             {passwordError && (
               <div className="text-red-500 text-sm">{passwordError}</div>

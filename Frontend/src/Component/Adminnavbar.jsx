@@ -32,6 +32,7 @@ const AdminNavbar = ({ pageTitle = "admin panel"}  ) => {
 
   const handleLogout = () => {
     localStorage.removeItem('adminId');
+    localStorage.removeItem('authToken')
     navigate('/admin/login');
   };
 

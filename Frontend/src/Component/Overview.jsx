@@ -158,8 +158,8 @@ export default function HealthDashboard() {
           </div>
           
           <button className="w-full flex items-center justify-center py-2 mt-4 text-[#0367A3] hover:bg-[#0367A3]/10 rounded-md transition-colors">
-            <span>View All Activity</span>
-            <ChevronRight className="h-4 w-4 ml-1" />
+            
+          
           </button>
         </div>
       </div>

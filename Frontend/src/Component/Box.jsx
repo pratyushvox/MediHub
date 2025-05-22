@@ -11,7 +11,7 @@ const Box = ({ icon, count, label, className, onClick }) => {
         <div className="text-4xl opacity-70">{icon}</div>
       </div>
       <div className="text-sm mt-2">{label}</div>
-      <div className="text-sm mt-1 text-right opacity-80">See details →</div>
+    
     </div>
   );
 };

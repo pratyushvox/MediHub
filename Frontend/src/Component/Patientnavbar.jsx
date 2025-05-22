@@ -40,8 +40,13 @@ const PatientNavbar = ({ pageTitle }) => {
   };
 
   const handleLogout = () => {
-    navigate('/login');
-  };
+  // Clear the authentication data from localStorage
+  localStorage.removeItem('token');
+  localStorage.removeItem('Userid');
+  
+  // Navigate to login page
+  navigate('/login');
+};
 
   const handleShowEditProfile = () => {
     setShowEditProfile(true);
