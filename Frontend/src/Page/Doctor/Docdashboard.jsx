@@ -511,12 +511,7 @@ function Doctordash() {
                             ? 'Consultation Completed'
                             : 'Complete Consultation'}
                         </button>
-                        <button 
-                          className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:text-gray-400"
-                          disabled={isUpdating}
-                        >
-                          Reschedule
-                        </button>
+                       
                       </div>
                     </div>
                   </>

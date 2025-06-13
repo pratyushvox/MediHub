@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { baseUrl } from '../../Constant/Constant';
-import { Eye, MessageSquare, Phone, Filter } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import Sidebar from '../../Component/Sidebar';
 
 const DoctorAppointmentsPage = () => {
@@ -73,29 +73,6 @@ const DoctorAppointmentsPage = () => {
     return filtered;
   };
 
-  const handleView = (appointment) => {
-    console.log('View appointment:', appointment);
-    // Implement view appointment details logic
-  };
-
-  const handleCall = (appointment) => {
-    const phoneNumber = appointment.bookedPatient?.phone;
-    if (phoneNumber) {
-      window.open(`tel:${phoneNumber}`);
-    } else {
-      alert('Phone number not available');
-    }
-  };
-
-  const handleMessage = (appointment) => {
-    const email = appointment.bookedPatient?.email;
-    if (email) {
-      window.open(`mailto:${email}`);
-    } else {
-      alert('Email not available');
-    }
-  };
-
   const filteredAppointments = filterAppointments();
 
   return (
@@ -161,7 +138,6 @@ const DoctorAppointmentsPage = () => {
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">PAYMENT STATUS</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">DATE/TIME</th>
                       <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">PHONE</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -189,29 +165,6 @@ const DoctorAppointmentsPage = () => {
                           {`${appointment.appointmentDate || 'N/A'} ${appointment.appointmentTime || ''}`}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">{appointment.bookedPatient?.phone || 'N/A'}</td>
-                        <td className="px-4 py-2 whitespace-nowrap flex items-center">
-                          <button 
-                            className="text-[#42d8c5] hover:text-[#3bc0af] mx-1"
-                            onClick={() => handleView(appointment)}
-                            title="View Details"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button 
-                            className="text-[#42d8c5] hover:text-[#3bc0af] mx-1"
-                            onClick={() => handleCall(appointment)}
-                            title="Call Patient"
-                          >
-                            <Phone size={16} />
-                          </button>
-                          <button 
-                            className="text-[#42d8c5] hover:text-[#3bc0af] mx-1"
-                            onClick={() => handleMessage(appointment)}
-                            title="Message Patient"
-                          >
-                            <MessageSquare size={16} />
-                          </button>
-                        </td>
                       </tr>
                     ))}
                   </tbody>

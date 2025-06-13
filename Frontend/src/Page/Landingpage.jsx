@@ -70,7 +70,9 @@ const Landingpage = () => {
             Schedule your appointment with one of our trusted doctors today. We offer a wide range of medical services to help you maintain your health and well-being.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <button className="bg-[#2FA093] text-white px-6 py-3 rounded hover:text-blue-700 ml-36 mt-14">
+            <button className="bg-[#2FA093] text-white px-6 py-3 rounded hover:text-blue-700 ml-36 mt-14"
+            onClick={()=>navigate(`/login`)}
+            >
               Book Appointment
             </button>
           </div>

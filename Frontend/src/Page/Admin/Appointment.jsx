@@ -9,8 +9,6 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DeleteDialog from '../../Component/Deletedialog';
 
-
-
 const ViewAppointmentlist = () => {
   const [appointments, setAppointments] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -287,7 +285,7 @@ const ViewAppointmentlist = () => {
           data={tableData}
           onEdit={(row) => openModal(row.originalData)}
           onDelete={handleDelete}
-          onClick={handleView}
+          showViewButton={false}  // This hides the eye icon
           striped={true}
           hoverable={true}
           bordered={true}
@@ -320,11 +318,11 @@ const ViewAppointmentlist = () => {
 
       {/* Delete Confirmation Dialog */}
       {isDeleteDialogOpen && (
-  <DeleteDialog 
-    onClose={cancelDelete}
-    onConfirm={confirmDelete}
-  />
-)}
+        <DeleteDialog 
+          onClose={cancelDelete}
+          onConfirm={confirmDelete}
+        />
+      )}
     </div>
   );
 };

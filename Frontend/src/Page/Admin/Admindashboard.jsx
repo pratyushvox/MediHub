@@ -288,12 +288,12 @@ const AdminDashboard = () => {
                 label="Total Doctors" 
                 className="bg-[#7FC3D1] text-white"
               />           
-              <Box 
-                icon={<FaMoneyBillWave />} 
-                count={`Rs. ${dashboardData.totalIncome}`} 
-                label="Total Income" 
-                className="bg-[#54AFA2] text-white"
-              />         
+             <Box 
+  icon={<FaMoneyBillWave />} 
+  count={`Rs. ${(dashboardData.totalIncome || 0).toFixed(2)}`} 
+  label="Total Income" 
+  className="bg-[#54AFA2] text-white"
+/>  
             </div>
           )}
                   
@@ -450,13 +450,6 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
-
-          <button           
-            onClick={handleLogout}           
-            className="mt-6 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"         
-          >           
-            Logout         
-          </button>       
         </div> 
       </div>    
     </div>   

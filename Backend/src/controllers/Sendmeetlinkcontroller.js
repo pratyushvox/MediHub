@@ -16,6 +16,7 @@ const transporter = nodemailer.createTransport({
 export const sendMeetLink = async (req, res) => {
   try {
     const { userId, meetLink, appointmentTime, doctorName } = req.body;
+    console.log(`${meetLink}`)
     
     // Input validation
     if (!userId || !meetLink || !appointmentTime || !doctorName) {
@@ -77,6 +78,7 @@ export const sendMeetLink = async (req, res) => {
         console.log('Server is ready to take messages');
       }
     });
+    
 
     // Send email
     const info = await transporter.sendMail(mailOptions);
@@ -90,6 +92,7 @@ export const sendMeetLink = async (req, res) => {
         email: user.email,
         sentAt: new Date()
       }
+      
     });
     
   } catch (error) {
@@ -99,5 +102,7 @@ export const sendMeetLink = async (req, res) => {
       message: 'Failed to send meet link',
       error: error.message 
     });
+    
   }
+
 };
