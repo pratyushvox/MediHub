@@ -7,8 +7,13 @@ import Twentyfour from "../Images/Twentyfour.png";
 import Record from "../Images/MedicalRecord.png";
 import ClinicImage from "../Images/Aboutus.png"; // Add a clinic image here
 import Navbar from "../Component/Navbar";
+import { useNavigate } from "react-router-dom"; 
 
 const Landingpage = () => {
+  const navigate = useNavigate(); 
+  const handleBookAppointment = () => {
+    navigate("/login"); // Navigate to the login page
+  };
   // State for About Us sliding navigation
   const [currentAboutIndex, setCurrentAboutIndex] = useState(0);
 
@@ -30,6 +35,9 @@ const Landingpage = () => {
       prevIndex === 0 ? aboutUsParagraphs.length - 1 : prevIndex - 1
     );
   };
+
+  
+
 
   // Scroll to section and update active section
   
@@ -62,7 +70,9 @@ const Landingpage = () => {
             Schedule your appointment with one of our trusted doctors today. We offer a wide range of medical services to help you maintain your health and well-being.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <button className="bg-[#2FA093] text-white px-6 py-3 rounded hover:text-blue-700 ml-36 mt-14">
+            <button className="bg-[#2FA093] text-white px-6 py-3 rounded hover:text-blue-700 ml-36 mt-14"
+            onClick={()=>navigate(`/login`)}
+            >
               Book Appointment
             </button>
           </div>

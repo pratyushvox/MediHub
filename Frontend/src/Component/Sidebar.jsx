@@ -1,0 +1,80 @@
+import React from 'react';
+import Medihublogo from "../Images/Medihublogo.png";
+
+import { 
+  Calendar, 
+  FileText, 
+  Home,
+  Stethoscope,
+  MessageSquare ,
+  FilePlus, 
+  Folder, 
+  MessageCircle,
+  Video,
+   
+  Clipboard, 
+  FlaskConical,
+} from 'lucide-react';
+
+const Sidebar = ({ role = 'patient', className = '' }) => {
+  // Define different navigation items for each role
+  const navigationConfig = {
+    admin: [
+      { title: 'Dashboard', icon: Home, href: '/admin/admindashboard' },
+      { title: 'Patient', icon: Calendar, href: '/admin/patientlist' },
+      { title: 'Doctor', icon: FileText, href: '/admin/doctorlist' },
+      { title: 'Appointment', icon: MessageSquare, href: '/admin/viewappointmentlist' },
+      { title: 'Invoices', icon: FileText, href: '/admin/paymentstatus' },
+      { title: 'Lab Results',  icon: FlaskConical, href: '/admin/Labreport' },
+    ],
+    doctor: [
+      { title: 'Dashboard', icon: Home, href: '/doctor/dashboard' },
+      { title: 'Appointments', icon: Calendar, href: '/doctor/viewappointment'  },
+      { title: 'Message', icon: MessageCircle, href: '/doctor/chat' },
+      
+      
+      
+    ],
+    patient: [
+      { title: 'Dashboard', icon: Home, href: '/pdashboard' },  
+      { title: 'View Appointments', icon: Calendar, href: '/patient/viewappointments' },  
+      { title: 'Book Appointment', icon: FilePlus, href: '/patient/BookAppointment' },  
+      { title: 'Documents', icon: Folder, href: '/Patient/Documentlist' },  
+      { title: 'Messages', icon: MessageSquare, href: '/Patient/chat' },  
+      
+      { title: 'Lab Report', icon: FlaskConical, href: '/Patient/Labreport' },  
+    ],
+  };
+
+  const navigation = navigationConfig[role] || navigationConfig.patient;
+
+  return (
+    <div className={`flex flex-col w-64 bg-[#cffafe] min-h-screen p-4 ${className}`}>
+      <div className="flex items-center justify-center mb-8 px-2">
+        <img 
+          src={Medihublogo} 
+          alt="Medihub Logo" 
+          className="h-28 w-auto"
+        />
+      </div>
+      
+      <nav className="flex-1">
+        <ul className="space-y-2">
+          {navigation.map((item) => (
+            <li key={item.title}>
+              <a
+                href={item.href}
+                className="flex items-center px-4 py-3 text-cyan-900 hover:bg-[#3CB5AE] hover:text-white rounded-lg transition-colors"
+              >
+                <item.icon className="w-5 h-5 mr-3" />
+                {item.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  );
+};
+
+export default Sidebar;

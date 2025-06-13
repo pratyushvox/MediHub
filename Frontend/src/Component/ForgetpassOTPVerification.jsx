@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ResetPassword from './Resetpassword';
 import { baseUrl } from '../Constant/Constant';
+import { toast } from 'react-toastify';
 
 const ForgetpassOtpVerification = ({ email, onClose }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -96,7 +97,7 @@ const ForgetpassOtpVerification = ({ email, onClose }) => {
       const data = await response.json();
 
       if (response.ok) {
-        alert('A new OTP has been sent to your email.');
+        toast.success('A new OTP has been sent to your email.');
         setError('');
         setTimer(600); // Reset timer to 10 minutes
         setOtp(['', '', '', '', '', '']); // Clear OTP fields

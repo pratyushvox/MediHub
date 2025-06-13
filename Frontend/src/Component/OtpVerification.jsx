@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { baseUrl } from '../Constant/Constant';
+import { toast } from 'react-toastify';
 
 const OtpVerification = ({ email, onClose }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -67,7 +68,7 @@ const OtpVerification = ({ email, onClose }) => {
       const data = await response.json();
 
       if (response.ok) {
-        alert('Verification successful! Please log in to continue.');
+        toast.success('Verification successful! Please log in to continue.');
         onClose();
         navigate('/login'); // Redirect to login page
       } else {

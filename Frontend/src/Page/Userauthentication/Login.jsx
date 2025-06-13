@@ -1,13 +1,12 @@
 import React, { useState } from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaUserMd, FaUser, FaUserTie } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Loginbg from "../../Images/Loginbg.png";
-import Button from "../../Component/Button";
+import Button from "../../Component/Button"
 import OtpVerification from "../../Component/OtpVerification";
 import EmailVerificationPopup from "../../Component/EmailVerificationPopup"; // Import the new component
 import { baseUrl } from "../../Constant/Constant";
-import {toast} from "react-toastify";
-
+import { toast } from "react-toastify";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -16,6 +15,7 @@ const Login = () => {
   const [showOtpPopup, setShowOtpPopup] = useState(false);
   const [resetEmailError, setResetEmailError] = useState("");
   const [showEmailPopup, setShowEmailPopup] = useState(false); // New state for email popup
+  const [loginError, setLoginError] = useState(""); // NEW: login error state
 
   const navigate = useNavigate();
 
@@ -46,33 +46,41 @@ const Login = () => {
           },
           body: JSON.stringify(formData),
         });
-  
+
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-  
+
         const data = await res.json();
-  
+
         if (!data || !data.user || !data.user.id) {
           throw new Error("Invalid response from server");
         }
-  
+
         const userId = data.user.id;
         const personalInfo = data.user.personalinfo; // Assuming backend returns this
-        
+
+        const token = data.user.token;
+        console.log("token", token);
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("Userid", userId);
+
         console.log("User Personal Info:", personalInfo);
-  
+
         toast.success("Logged in successfully!");
         setFormData({ email: "", password: "" });
-  
+        setLoginError(""); // Clear login error if successful
+
         // Check if personalinfo is null and navigate accordingly
         if (!personalInfo) {
-          navigate(`/personalinfo/${userId}`);
+          navigate(`/personalinfo`);
         } else {
-          navigate("/dashboard");
+          navigate(`/Pdashboard`);
         }
       } catch (error) {
         console.error("Fetch error:", error.message);
+        setLoginError("The email or password you entered is incorrect."); // NEW: Set login error message
         toast.error("Failed to login. Please try again.");
       }
     }
@@ -81,15 +89,19 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+
     // Clear errors when user starts typing
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" });
+    }
+
+    if (loginError) {
+      setLoginError(""); // Clear login error when user types
     }
   };
 
   const handleOtpSuccess = () => {
     alert("OTP verification successful. You can now reset your password.");
-    // Redirect to password reset page or perform relevant action
   };
 
   const handleOtpFailure = () => {
@@ -97,25 +109,27 @@ const Login = () => {
   };
 
   const handleForgotPasswordClick = () => {
-    setShowEmailPopup(true); // Show the email verification popup
+    setShowEmailPopup(true);
   };
 
   const handleEmailSubmit = (email) => {
     alert(`Email submitted: ${email}`);
-    setShowEmailPopup(false); // Close the popup after submission
+    setShowEmailPopup(false);
   };
 
+  
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex w-full max-w-4xl bg-white rounded-lg shadow-lg overflow-hidden">
           {/* Login Form Side */}
-          <div className="w-1/2 p-10 h-[500px]">
+          <div className="w-1/2 p-10 h-full">
             <div className="flex flex-col h-full">
               <div className="mb-8">
                 <h1 className="text-3xl font-extrabold text-center text-[#3CB5AC]">
                   Welcome to <span className="text-[#0665A7]">MediHub</span>
                 </h1>
+                <h2 className="text-2xl ml-7 font-extrabold  text-[#3CB5AC] mt-5 ">User Login</h2>
                 <p className="text-lg text-gray-600 text-center mt-6">
                   Login to your account and get started.
                 </p>
@@ -166,6 +180,9 @@ const Login = () => {
                   {errors.password && (
                     <p className="text-red-500 text-sm mt-1">{errors.password}</p>
                   )}
+                  {loginError && (
+                    <p className="text-red-500 text-sm mt-1">{loginError}</p>
+                  )}
                 </div>
 
                 <div className="flex justify-end">
@@ -183,13 +200,27 @@ const Login = () => {
                   type="submit"
                   className="w-full bg-[#2FA093] p-2 rounded-md text-white font-semibold hover:bg-[#05527E] transition"
                 />
+               <div className="text-center mt-4">
+  <p className="text-sm text-gray-600">
+    Don't have an account?{" "}
+    <button
+      type="button"
+      onClick={() => navigate("/signup")}
+      className="text-[#0665A7] hover:text-[#3CB5AC] font-medium"
+    >
+      Sign up
+    </button>
+  </p>
+</div>
+
+
               </form>
             </div>
           </div>
 
           {/* Image Side */}
           <div
-            className="w-1/2 bg-cover bg-center h-[500px]"
+            className="w-1/2 bg-cover bg-center h-[645px]"
             style={{ backgroundImage: `url(${Loginbg})` }}
           >
             <div className="h-full flex flex-col justify-end items-center p-6 bg-gradient-to-t from-black/60 via-black/40 to-transparent">
